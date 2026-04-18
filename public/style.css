@@ -1896,3 +1896,199 @@ tr:hover td {
     align-items: flex-start;
   }
 }
+
+/* ─── PERFIL ──────────────────────────────────────────── */
+.perfil-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media(max-width:900px) {
+  .perfil-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.perfil-sidebar {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--r-lg);
+  padding: 32px 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.05);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.perfil-avatar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--gray-200);
+  margin-bottom: 24px;
+}
+
+.perfil-avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--or), var(--or3));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--white);
+  box-shadow: 0 8px 28px rgba(232,96,28,.35);
+  margin-bottom: 16px;
+  letter-spacing: -1px;
+  transition: transform .3s;
+}
+
+.perfil-avatar:hover {
+  transform: scale(1.04);
+}
+
+.perfil-avatar-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--black);
+  text-align: center;
+}
+
+.perfil-avatar-user {
+  font-size: .78rem;
+  color: var(--gray-400);
+  margin-top: 4px;
+}
+
+.perfil-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.perfil-stat {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-100);
+  border-radius: var(--r-sm);
+  padding: 14px 12px;
+  text-align: center;
+}
+
+.perfil-stat-val {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -1px;
+  color: var(--black);
+  line-height: 1;
+}
+
+.perfil-stat-val.orange {
+  color: var(--or);
+}
+
+.perfil-stat-label {
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  margin-top: 5px;
+}
+
+.perfil-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.perfil-content .form-card {
+  max-width: 100%;
+}
+
+.perfil-section-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--black);
+  letter-spacing: -.2px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+/* Input com botão de visualizar senha */
+.input-pw-wrap {
+  position: relative;
+}
+
+.input-pw-wrap .form-input {
+  padding-right: 48px;
+}
+
+.btn-eye {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 4px;
+  opacity: .6;
+  transition: opacity .2s;
+}
+
+.btn-eye:hover {
+  opacity: 1;
+}
+
+/* Barra de força da senha */
+.pw-strength-bar {
+  height: 4px;
+  background: var(--gray-100);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.pw-strength-bar > div {
+  height: 100%;
+  width: 0;
+  border-radius: 99px;
+  transition: width .3s, background .3s;
+}
+
+.pw-strength-label {
+  font-size: .72rem;
+  font-weight: 600;
+  margin-top: 5px;
+  height: 16px;
+  transition: color .3s;
+}
+
+/* Feedback inline */
+.perfil-feedback {
+  font-size: .8rem;
+  font-weight: 600;
+  margin-top: 12px;
+  padding: 8px 14px;
+  border-radius: var(--r-sm);
+  min-height: 0;
+  transition: all .3s;
+}
+
+.perfil-feedback.ok {
+  background: rgba(29,185,84,.1);
+  color: var(--ok);
+  border: 1px solid rgba(29,185,84,.25);
+}
+
+.perfil-feedback.err {
+  background: rgba(229,48,48,.08);
+  color: var(--cr);
+  border: 1px solid rgba(229,48,48,.2);
+}
