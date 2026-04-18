@@ -107,7 +107,258 @@ app.post('/api/login', (q, r) => {
   q.session.user = u.usuario;
   r.json({ ok: true });
 });
+
+app.post('/api/cadastro', (q, r) => {
+  const { usuario, senha, senha2, nome } = q.body;
+  if (!usuario || !senha) return r.json({ ok: false, msg: 'Preencha todos os campos.' });
+  if (senha !== senha2) return r.json({ ok: false, msg: 'As senhas não conferem.' });
+  if (senha.length < 6) return r.json({ ok: false, msg: 'A senha deve ter pelo menos 6 caracteres.' });
+  const usrRegex = /^[a-zA-Z0-9_]{3,20}$/;
+  if (!usrRegex.test(usuario)) return r.json({ ok: false, msg: 'Usuário: 3-20 caracteres, sem espaços ou acentos.' });
+  const db = lerDB();
+  if (!db.usuarios) db.usuarios = [];
+  if (usuario === 'aluno' || db.usuarios.find(x => x.usuario === usuario))
+    return r.json({ ok: false, msg: 'Este usuário já está em uso. Escolha outro.' });
+  db.usuarios.push({ usuario, senha, nome: nome || usuario });
+  salvarDB(db);
+  q.session.user = usuario;
+  r.json({ ok: true });
+});
+
 app.get('/logout', (q, r) => { q.session.destroy(() => r.redirect('/')); });
+
+// ─── API PERFIL ────────────────────────────────────────────────────────────────
+app.get('/api/perfil', logado, (q, r) => {
+  const db = lerDB();
+  const u = db.usuarios?.find(x => x.usuario === q.session.user) || { usuario: q.session.user };
+  r.json({ usuario: u.usuario, nome: u.nome || '', email: u.email || '', telefone: u.telefone || '', cidade: u.cidade || '' });
+});
+
+app.put('/api/perfil', logado, (q, r) => {
+  const db = lerDB();
+  if (!db.usuarios) db.usuarios = [];
+  let u = db.usuarios.find(x => x.usuario === q.session.user);
+  if (!u) { u = { usuario: q.session.user, senha: 'senha123' }; db.usuarios.push(u); }
+  const { nome, email, telefone, cidade } = q.body;
+  if (nome !== undefined) u.nome = nome.trim();
+  if (email !== undefined) u.email = email.trim();
+  if (telefone !== undefined) u.telefone = telefone.trim();
+  if (cidade !== undefined) u.cidade = cidade.trim();
+  salvarDB(db);
+  r.json({ ok: true });
+});
+
+app.put('/api/perfil/senha', logado, (q, r) => {
+  const db = lerDB();
+  if (!db.usuarios) db.usuarios = [];
+  let u = db.usuarios.find(x => x.usuario === q.session.user);
+  if (!u) { u = { usuario: q.session.user, senha: 'senha123' }; db.usuarios.push(u); }
+  const { senha_atual, senha_nova } = q.body;
+  // usuario demo "aluno" aceita senha123 mesmo que não esteja no array
+  const senhaOk = u.senha === senha_atual || (q.session.user === 'aluno' && senha_atual === 'senha123');
+  if (!senhaOk) return r.json({ ok: false, msg: 'Senha atual incorreta.' });
+  if (!senha_nova || senha_nova.length < 6) return r.json({ ok: false, msg: 'A nova senha deve ter pelo menos 6 caracteres.' });
+  u.senha = senha_nova;
+  salvarDB(db);
+  r.json({ ok: true });
+});
+
+// ─── PÁGINA PERFIL ─────────────────────────────────────────────────────────────
+app.get('/perfil', logado, (q, r) => {
+  const db = lerDB();
+  const u = db.usuarios?.find(x => x.usuario === q.session.user) || { usuario: q.session.user };
+  const vs = db.veiculos.filter(v => v.usuario === q.session.user);
+  const ms = db.manutencoes.filter(m => vs.find(v => v.id === m.veiculo_id));
+  const rvs = (db.revisoes || []).filter(rv => rv.usuario === q.session.user);
+  const totalGasto = ms.reduce((s, m) => s + (parseFloat(m.custo) || 0), 0);
+  const nome = u.nome || q.session.user;
+  const ini = nome.charAt(0).toUpperCase();
+
+  r.send(pg('Meu Perfil', q.session.user, `
+  <div class="page-header an an-d1">
+    <div><div class="page-title">Meu <span>Perfil</span></div><div class="page-subtitle">Gerencie seus dados pessoais e senha</div></div>
+  </div>
+
+  <div class="perfil-layout">
+
+    <!-- CARD AVATAR / RESUMO -->
+    <div class="perfil-sidebar an an-d2">
+      <div class="perfil-avatar-wrap">
+        <div class="perfil-avatar" id="avatarCircle">${ini}</div>
+        <div class="perfil-avatar-name" id="avatarName">${nome}</div>
+        <div class="perfil-avatar-user">@${q.session.user}</div>
+      </div>
+      <div class="perfil-stats">
+        <div class="perfil-stat">
+          <div class="perfil-stat-val">${vs.length}</div>
+          <div class="perfil-stat-label">Veículos</div>
+        </div>
+        <div class="perfil-stat">
+          <div class="perfil-stat-val">${ms.length}</div>
+          <div class="perfil-stat-label">Manutenções</div>
+        </div>
+        <div class="perfil-stat">
+          <div class="perfil-stat-val">${rvs.length}</div>
+          <div class="perfil-stat-label">Revisões</div>
+        </div>
+        <div class="perfil-stat" style="grid-column:1/-1">
+          <div class="perfil-stat-val orange">R$ ${brl(totalGasto)}</div>
+          <div class="perfil-stat-label">Total investido</div>
+        </div>
+      </div>
+      <a href="/garagem" class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;text-align:center">← Minha Garagem</a>
+    </div>
+
+    <!-- FORMULÁRIOS -->
+    <div class="perfil-content">
+
+      <!-- DADOS PESSOAIS -->
+      <div class="form-card an an-d3">
+        <div class="perfil-section-title">👤 Dados Pessoais</div>
+        <div class="g2" style="margin-top:20px">
+          <div class="form-group">
+            <label class="form-label">Nome completo</label>
+            <input class="form-input" id="pf-nome" placeholder="Ex: João da Silva" value="${u.nome || ''}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Usuário</label>
+            <input class="form-input" value="${q.session.user}" disabled style="opacity:.5;cursor:not-allowed">
+          </div>
+          <div class="form-group">
+            <label class="form-label">E-mail</label>
+            <input class="form-input" id="pf-email" type="email" placeholder="Ex: joao@email.com" value="${u.email || ''}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Telefone / WhatsApp</label>
+            <input class="form-input" id="pf-tel" placeholder="Ex: (61) 99999-9999" value="${u.telefone || ''}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cidade / Estado</label>
+            <input class="form-input" id="pf-cidade" placeholder="Ex: Brasília / DF" value="${u.cidade || ''}">
+          </div>
+        </div>
+        <div style="margin-top:24px;display:flex;gap:10px">
+          <button class="btn btn-primary" style="flex:1" onclick="salvarPerfil()">✅ Salvar dados</button>
+        </div>
+        <div class="perfil-feedback" id="pf-msg"></div>
+      </div>
+
+      <!-- TROCAR SENHA -->
+      <div class="form-card an an-d4" style="margin-top:20px">
+        <div class="perfil-section-title">🔒 Alterar Senha</div>
+        <div class="g2" style="margin-top:20px">
+          <div class="form-group" style="grid-column:1/-1">
+            <label class="form-label">Senha atual</label>
+            <div class="input-pw-wrap">
+              <input class="form-input" id="pw-atual" type="password" placeholder="Digite sua senha atual" autocomplete="current-password">
+              <button type="button" class="btn-eye" onclick="togglePw('pw-atual',this)">👁</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nova senha</label>
+            <div class="input-pw-wrap">
+              <input class="form-input" id="pw-nova" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+              <button type="button" class="btn-eye" onclick="togglePw('pw-nova',this)">👁</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirmar nova senha</label>
+            <div class="input-pw-wrap">
+              <input class="form-input" id="pw-conf" type="password" placeholder="Repita a nova senha" autocomplete="new-password">
+              <button type="button" class="btn-eye" onclick="togglePw('pw-conf',this)">👁</button>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:4px">
+          <div class="pw-strength-bar"><div id="pw-strength-fill"></div></div>
+          <div class="pw-strength-label" id="pw-strength-label"></div>
+        </div>
+        <div style="margin-top:20px;display:flex;gap:10px">
+          <button class="btn btn-primary" style="flex:1" onclick="trocarSenha()">🔒 Alterar senha</button>
+        </div>
+        <div class="perfil-feedback" id="pw-msg"></div>
+      </div>
+
+      <!-- ZONA DE PERIGO -->
+      <div class="form-card an an-d5" style="margin-top:20px;border-color:rgba(229,48,48,.25)">
+        <div class="perfil-section-title" style="color:#E53030">⚠️ Zona de Perigo</div>
+        <p style="font-size:.88rem;color:var(--gray-400);margin:14px 0 20px;line-height:1.7">Sair da plataforma encerrará sua sessão atual. Todos os seus dados permanecem salvos.</p>
+        <a href="/logout" class="btn btn-danger" style="display:inline-flex;gap:8px;align-items:center">🚪 Sair da conta</a>
+      </div>
+
+    </div>
+  </div>
+  `, `<script>
+function toggleMobile(){document.getElementById('mobileMenu').classList.toggle('open');}
+
+// ── Força de senha
+document.getElementById('pw-nova').addEventListener('input', function(){
+  var v=this.value, s=0;
+  if(v.length>=6)s++;
+  if(v.length>=10)s++;
+  if(/[A-Z]/.test(v))s++;
+  if(/[0-9]/.test(v))s++;
+  if(/[^A-Za-z0-9]/.test(v))s++;
+  var fill=document.getElementById('pw-strength-fill');
+  var lbl=document.getElementById('pw-strength-label');
+  var cols=['','#E53030','#E8601C','#f0b429','#4caf50','#2e7d32'];
+  var txts=['','Muito fraca','Fraca','Média','Forte','Muito forte'];
+  fill.style.width=(s*20)+'%';
+  fill.style.background=cols[s]||cols[1];
+  lbl.textContent=txts[s]||'';
+  lbl.style.color=cols[s]||cols[1];
+});
+
+// ── Toggle visualizar senha
+function togglePw(id, btn){
+  var inp=document.getElementById(id);
+  inp.type=inp.type==='password'?'text':'password';
+  btn.textContent=inp.type==='password'?'👁':'🙈';
+}
+
+// ── Salvar dados pessoais
+async function salvarPerfil(){
+  var d={nome:document.getElementById('pf-nome').value.trim(),email:document.getElementById('pf-email').value.trim(),telefone:document.getElementById('pf-tel').value.trim(),cidade:document.getElementById('pf-cidade').value.trim()};
+  var msg=document.getElementById('pf-msg');
+  var res=await fetch('/api/perfil',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  var j=await res.json();
+  if(j.ok){
+    toast('Perfil atualizado com sucesso! ✅');
+    msg.className='perfil-feedback ok'; msg.textContent='✓ Dados salvos!';
+    // Atualiza avatar ao vivo
+    var n=d.nome||'${q.session.user}';
+    document.getElementById('avatarCircle').textContent=n.charAt(0).toUpperCase();
+    document.getElementById('avatarName').textContent=n;
+    setTimeout(function(){msg.textContent='';},3000);
+  } else {
+    msg.className='perfil-feedback err'; msg.textContent='✗ Erro ao salvar.';
+  }
+}
+
+// ── Trocar senha
+async function trocarSenha(){
+  var atual=document.getElementById('pw-atual').value;
+  var nova=document.getElementById('pw-nova').value;
+  var conf=document.getElementById('pw-conf').value;
+  var msg=document.getElementById('pw-msg');
+  if(!atual||!nova||!conf){msg.className='perfil-feedback err';msg.textContent='✗ Preencha todos os campos.';return;}
+  if(nova!==conf){msg.className='perfil-feedback err';msg.textContent='✗ As senhas não conferem.';return;}
+  if(nova.length<6){msg.className='perfil-feedback err';msg.textContent='✗ A nova senha deve ter pelo menos 6 caracteres.';return;}
+  var res=await fetch('/api/perfil/senha',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({senha_atual:atual,senha_nova:nova})});
+  var j=await res.json();
+  if(j.ok){
+    toast('Senha alterada com sucesso! 🔒');
+    msg.className='perfil-feedback ok'; msg.textContent='✓ Senha alterada!';
+    ['pw-atual','pw-nova','pw-conf'].forEach(function(id){document.getElementById(id).value='';});
+    document.getElementById('pw-strength-fill').style.width='0';
+    document.getElementById('pw-strength-label').textContent='';
+    setTimeout(function(){msg.textContent='';},3000);
+  } else {
+    msg.className='perfil-feedback err'; msg.textContent='✗ '+(j.msg||'Erro ao alterar senha.');
+  }
+}
+</script>`, '/perfil'));
+});
 
 app.get('/api/veiculos', logado, (q, r) => r.json(lerDB().veiculos.filter(v => v.usuario === q.session.user)));
 app.post('/api/veiculos', logado, (q, r) => {
@@ -266,6 +517,16 @@ app.get('/', (q, r) => {
 .lp-modal-hint{background:rgba(232,96,28,.07);border:1px solid rgba(232,96,28,.2);border-radius:6px;padding:10px 14px;font-size:.78rem;color:#5a5a5a;margin-bottom:20px;line-height:1.5;}
 .lp-modal-hint b{color:#E8601C;}
 .lp-modal-err{color:#E53030;font-size:.78rem;text-align:center;margin-top:10px;min-height:20px;}
+.lp-modal-tabs{display:flex;border-bottom:1px solid #e2e2e2;}
+.lp-modal-tab{flex:1;padding:13px;background:none;border:none;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:600;color:#9a9a9a;cursor:pointer;transition:.2s;position:relative;}
+.lp-modal-tab.active{color:#E8601C;}
+.lp-modal-tab.active::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:#E8601C;}
+.lp-modal-tab:hover{color:#0a0a0a;}
+.lp-modal-switch{margin-top:16px;font-size:.78rem;color:#9a9a9a;text-align:center;}
+.lp-modal-switch a{color:#E8601C;font-weight:600;text-decoration:none;}
+.lp-modal-switch a:hover{text-decoration:underline;}
+.lp-pw-bar{height:4px;background:#f0f0f0;border-radius:99px;overflow:hidden;margin-top:8px;}
+.lp-pw-bar>div{height:100%;width:0;border-radius:99px;transition:width .3s,background .3s;}
 .fade-up{opacity:0;transform:translateY(30px);transition:opacity .6s cubic-bezier(.4,0,.2,1),transform .6s cubic-bezier(.4,0,.2,1);}
 .fade-up.visible{opacity:1;transform:none;}
 </style>
@@ -385,10 +646,16 @@ app.get('/', (q, r) => {
   <div class="lp-modal" onclick="event.stopPropagation()">
     <div class="lp-modal-header">
       <div class="lp-modal-logo">PIT <span>STOP</span></div>
-      <div class="lp-modal-subtitle">Acesse sua garagem digital</div>
+      <div class="lp-modal-subtitle" id="lp-modal-sub">Acesse sua garagem digital</div>
       <button class="lp-modal-close" onclick="fecharLogin(null)">✕</button>
     </div>
-    <div class="lp-modal-body">
+    <!-- Abas -->
+    <div class="lp-modal-tabs">
+      <button class="lp-modal-tab active" id="tab-login" onclick="mudarAba('login')">Entrar</button>
+      <button class="lp-modal-tab" id="tab-cadastro" onclick="mudarAba('cadastro')">Criar conta</button>
+    </div>
+    <!-- Painel Login -->
+    <div class="lp-modal-body" id="painel-login">
       <div class="lp-modal-hint">🎓 Demo acadêmico · Acesse com <b>aluno</b> / <b>senha123</b></div>
       <div class="form-group">
         <label class="form-label">Usuário</label>
@@ -400,6 +667,30 @@ app.get('/', (q, r) => {
       </div>
       <button class="btn btn-primary btn-full" id="lp-loginbtn" style="height:48px;font-size:.95rem;margin-top:4px" onclick="fazerLogin()">Entrar na plataforma →</button>
       <div class="lp-modal-err" id="lp-err"></div>
+      <p class="lp-modal-switch">Não tem conta? <a href="#" onclick="mudarAba('cadastro');return false;">Criar conta grátis →</a></p>
+    </div>
+    <!-- Painel Cadastro -->
+    <div class="lp-modal-body" id="painel-cadastro" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Nome completo</label>
+        <input class="form-input" id="cad-nome" placeholder="Ex: João da Silva" autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Usuário <span style="color:var(--gray-400);font-weight:400;text-transform:none">(sem espaços, 3-20 chars)</span></label>
+        <input class="form-input" id="cad-us" placeholder="Ex: joaosilva" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Senha <span style="color:var(--gray-400);font-weight:400;text-transform:none">(mín. 6 caracteres)</span></label>
+        <input class="form-input" type="password" id="cad-pw" placeholder="••••••••" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirmar senha</label>
+        <input class="form-input" type="password" id="cad-pw2" placeholder="••••••••" autocomplete="new-password">
+      </div>
+      <div class="lp-pw-bar"><div id="lp-pw-fill"></div></div>
+      <button class="btn btn-primary btn-full" id="lp-cadbtn" style="height:48px;font-size:.95rem;margin-top:12px" onclick="fazerCadastro()">Criar minha conta →</button>
+      <div class="lp-modal-err" id="cad-err"></div>
+      <p class="lp-modal-switch">Já tem conta? <a href="#" onclick="mudarAba('login');return false;">← Entrar</a></p>
     </div>
   </div>
 </div>
@@ -411,19 +702,63 @@ window.addEventListener('scroll',function(){document.getElementById('lp-nav').cl
 var obs=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:.12});
 document.querySelectorAll('.fade-up').forEach(function(el){obs.observe(el);});
 document.querySelectorAll('a[href^="#"]').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();var t=document.querySelector(this.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'});});});
-function abrirLogin(){document.getElementById('loginModal').classList.add('open');setTimeout(function(){document.getElementById('lp-us').focus();},200);}
+
+function abrirLogin(aba){
+  document.getElementById('loginModal').classList.add('open');
+  mudarAba(aba||'login');
+  setTimeout(function(){document.getElementById(aba==='cadastro'?'cad-nome':'lp-us').focus();},200);
+}
 function fecharLogin(e){if(!e||e.target===document.getElementById('loginModal'))document.getElementById('loginModal').classList.remove('open');}
 document.addEventListener('keydown',function(e){if(e.key==='Escape')fecharLogin(null);});
-document.getElementById('lp-pw').addEventListener('keydown',function(e){if(e.key==='Enter')fazerLogin();});
-document.getElementById('lp-us').addEventListener('keydown',function(e){if(e.key==='Enter')fazerLogin();});
+
+function mudarAba(aba){
+  var isLogin=aba==='login';
+  document.getElementById('painel-login').style.display=isLogin?'block':'none';
+  document.getElementById('painel-cadastro').style.display=isLogin?'none':'block';
+  document.getElementById('tab-login').classList.toggle('active',isLogin);
+  document.getElementById('tab-cadastro').classList.toggle('active',!isLogin);
+  document.getElementById('lp-modal-sub').textContent=isLogin?'Acesse sua garagem digital':'Crie sua conta gratuita';
+  document.getElementById('lp-err').textContent='';
+  document.getElementById('cad-err').textContent='';
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  document.getElementById('lp-pw').addEventListener('keydown',function(e){if(e.key==='Enter')fazerLogin();});
+  document.getElementById('lp-us').addEventListener('keydown',function(e){if(e.key==='Enter')fazerLogin();});
+  document.getElementById('cad-pw2').addEventListener('keydown',function(e){if(e.key==='Enter')fazerCadastro();});
+  document.getElementById('cad-pw').addEventListener('input',function(){
+    var v=this.value,s=0;
+    if(v.length>=6)s++;if(v.length>=10)s++;if(/[A-Z]/.test(v))s++;if(/[0-9]/.test(v))s++;if(/[^A-Za-z0-9]/.test(v))s++;
+    var fill=document.getElementById('lp-pw-fill');
+    var cols=['','#E53030','#E8601C','#f0b429','#4caf50','#2e7d32'];
+    fill.style.width=(s*20)+'%';fill.style.background=cols[s]||cols[1];
+  });
+});
+
 async function fazerLogin(){
-  var u=document.getElementById('lp-us').value.trim(),p=document.getElementById('lp-pw').value.trim(),err=document.getElementById('lp-err'),btn=document.getElementById('lp-loginbtn');
+  var u=document.getElementById('lp-us').value.trim(),p=document.getElementById('lp-pw').value.trim();
+  var err=document.getElementById('lp-err'),btn=document.getElementById('lp-loginbtn');
   if(!u||!p){err.textContent='Preencha usuário e senha.';return;}
   err.textContent='';btn.textContent='Entrando...';btn.disabled=true;
   var res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario:u,senha:p})});
   var j=await res.json();
   if(j.ok){window.location.href='/dashboard';}
   else{err.textContent='Usuário ou senha incorretos.';btn.textContent='Entrar na plataforma →';btn.disabled=false;}
+}
+
+async function fazerCadastro(){
+  var nome=document.getElementById('cad-nome').value.trim();
+  var u=document.getElementById('cad-us').value.trim();
+  var p=document.getElementById('cad-pw').value;
+  var p2=document.getElementById('cad-pw2').value;
+  var err=document.getElementById('cad-err'),btn=document.getElementById('lp-cadbtn');
+  if(!u||!p||!p2){err.textContent='Preencha todos os campos obrigatórios.';return;}
+  if(p!==p2){err.textContent='As senhas não conferem.';return;}
+  err.textContent='';btn.textContent='Criando conta...';btn.disabled=true;
+  var res=await fetch('/api/cadastro',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario:u,senha:p,senha2:p2,nome:nome})});
+  var j=await res.json();
+  if(j.ok){window.location.href='/dashboard';}
+  else{err.textContent=j.msg||'Erro ao criar conta.';btn.textContent='Criar minha conta →';btn.disabled=false;}
 }
 </script>
 </body></html>`);
