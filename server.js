@@ -55,6 +55,7 @@ function topnav(user, activePath) {
   const links = [
     ['/dashboard', 'Dashboard'],
     ['/garagem', 'Meus Carros'],
+    ['/revisoes', 'Revisões'],
     ['/cadastro', 'Adicionar Carro'],
     ['/explorar', 'Explorar BR'],
     ['/oficinas', 'Locais'],
@@ -133,52 +134,302 @@ app.delete('/api/manut/:id', logado, (q, r) => {
   salvarDB(db); r.json({ ok: true });
 });
 
-// ─── LOGIN ─────────────────────────────────────────────────────────────────────
+// ─── API REVISÕES ──────────────────────────────────────────────────────────────
+app.get('/api/revisoes', logado, (q, r) => {
+  const db = lerDB();
+  const vs = db.veiculos.filter(v => v.usuario === q.session.user).map(v => v.id);
+  r.json((db.revisoes || []).filter(rv => vs.includes(rv.veiculo_id)));
+});
+
+app.post('/api/revisoes', logado, (q, r) => {
+  const db = lerDB();
+  const vid = parseInt(q.body.veiculo_id);
+  if (!db.veiculos.find(v => v.id === vid && v.usuario === q.session.user)) return r.json({ ok: false });
+  if (!db.revisoes) db.revisoes = [];
+  const id = db.nextR || 1;
+  const ano = new Date().getFullYear();
+  const num = String(id).padStart(3, '0');
+  const numero_doc = `REV-${ano}-${num}`;
+  db.revisoes.push({ id, veiculo_id: vid, usuario: q.session.user, numero_doc, ...q.body });
+  db.nextR = id + 1;
+  salvarDB(db);
+  r.json({ ok: true, id, numero_doc });
+});
+
+app.delete('/api/revisoes/:id', logado, (q, r) => {
+  const db = lerDB();
+  db.revisoes = (db.revisoes || []).filter(rv => rv.id !== parseInt(q.params.id));
+  salvarDB(db); r.json({ ok: true });
+});
+
+// ─── LANDING PAGE ──────────────────────────────────────────────────────────────
 app.get('/', (q, r) => {
   if (q.session.user) return r.redirect('/dashboard');
-  r.send(`${HEAD('Acesso')}
-<body class="login-page">
-  <div class="login-left">
-    <div class="login-left-bg"></div>
-    <div class="login-left-overlay"></div>
-    <div class="login-left-content">
-      <div class="login-left-label">Gestão Automotiva · 2026</div>
-      <div class="login-left-title">Sua garagem<br>inteligente.</div>
+  r.send(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Pit Stop — Plataforma digital de gestão automotiva. Controle sua garagem, histórico de revisões e manutenções em um só lugar.">
+<title>Pit Stop — Gestão Automotiva Inteligente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="/style.css?v=4">
+<style>
+.lp-nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:68px;background:rgba(10,10,10,.92);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.06);transition:all .3s;}
+.lp-nav.scrolled{background:rgba(10,10,10,.98);box-shadow:0 4px 32px rgba(0,0,0,.4);}
+.lp-logo{font-size:1.15rem;font-weight:900;letter-spacing:4px;color:#fff;display:flex;align-items:center;gap:10px;text-decoration:none;}
+.lp-logo-dot{width:8px;height:8px;border-radius:50%;background:#E8601C;box-shadow:0 0 12px #E8601C;animation:dot-pulse 2.5s ease-in-out infinite;}
+.lp-nav-links{display:flex;align-items:center;gap:28px;}
+.lp-nav-links a{color:rgba(255,255,255,.6);font-size:.82rem;font-weight:500;letter-spacing:.5px;text-decoration:none;transition:.2s;}
+.lp-nav-links a:hover{color:#fff;}
+.lp-btn-login{background:#E8601C;color:#fff;border:none;padding:10px 24px;border-radius:4px;font-family:'Inter',sans-serif;font-size:.83rem;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .2s;box-shadow:0 2px 12px rgba(232,96,28,.3);}
+.lp-btn-login:hover{background:#C94E0E;transform:translateY(-1px);box-shadow:0 4px 20px rgba(232,96,28,.45);}
+@media(max-width:768px){.lp-nav{padding:0 20px;}.lp-nav-links{display:none;}}
+.lp-hero{min-height:100vh;background:#0a0a0a;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:120px 24px 80px;}
+.lp-hero-bg{position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1600&auto=format') center/cover no-repeat;opacity:.18;}
+.lp-hero-glow{position:absolute;top:20%;left:50%;transform:translateX(-50%);width:800px;height:400px;background:radial-gradient(ellipse at center,rgba(232,96,28,.15) 0%,transparent 70%);pointer-events:none;}
+.lp-hero-content{position:relative;z-index:2;text-align:center;max-width:820px;}
+.lp-hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(232,96,28,.12);border:1px solid rgba(232,96,28,.3);color:#E8601C;padding:6px 16px;border-radius:99px;font-size:.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:28px;}
+.lp-hero-title{font-size:clamp(2.6rem,7vw,5rem);font-weight:900;color:#fff;line-height:1.05;letter-spacing:-2px;margin-bottom:22px;}
+.lp-hero-title span{color:#E8601C;}
+.lp-hero-sub{font-size:1.1rem;color:rgba(255,255,255,.55);line-height:1.7;max-width:580px;margin:0 auto 40px;}
+.lp-hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+.lp-hero-cta .btn-main{background:#E8601C;color:#fff;padding:15px 36px;border-radius:4px;font-weight:700;font-size:1rem;border:none;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px;transition:all .25s;box-shadow:0 4px 24px rgba(232,96,28,.4);}
+.lp-hero-cta .btn-main:hover{background:#C94E0E;transform:translateY(-2px);box-shadow:0 8px 32px rgba(232,96,28,.5);}
+.lp-hero-cta .btn-sec{background:transparent;color:rgba(255,255,255,.7);padding:15px 36px;border-radius:4px;font-weight:600;font-size:1rem;border:1.5px solid rgba(255,255,255,.18);cursor:pointer;font-family:'Inter',sans-serif;transition:all .25s;text-decoration:none;display:inline-flex;align-items:center;}
+.lp-hero-cta .btn-sec:hover{border-color:rgba(255,255,255,.4);color:#fff;}
+.lp-hero-stats{display:flex;gap:48px;justify-content:center;margin-top:60px;flex-wrap:wrap;}
+.lp-stat{text-align:center;}
+.lp-stat-num{font-size:2.2rem;font-weight:900;color:#E8601C;letter-spacing:-1px;}
+.lp-stat-label{font-size:.72rem;color:rgba(255,255,255,.4);letter-spacing:2px;text-transform:uppercase;margin-top:4px;}
+.lp-section{padding:96px 24px;}
+.lp-section-light{background:#f9f9f9;}
+.lp-section-dark{background:#0a0a0a;}
+.lp-container{max-width:1100px;margin:0 auto;}
+.lp-section-tag{font-size:.65rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#E8601C;margin-bottom:14px;}
+.lp-section-title{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;letter-spacing:-1px;line-height:1.15;margin-bottom:18px;}
+.lp-section-sub{font-size:1rem;line-height:1.75;color:#5a5a5a;max-width:600px;}
+.lp-story-grid{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center;margin-top:56px;}
+.lp-story-img{border-radius:12px;overflow:hidden;position:relative;}
+.lp-story-img img{width:100%;height:420px;object-fit:cover;display:block;}
+.lp-story-img::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(232,96,28,.15),transparent);}
+.lp-story-text .large{font-size:1.15rem;font-weight:700;color:#0a0a0a;line-height:1.65;margin-bottom:18px;}
+.lp-story-text p{font-size:.95rem;color:#5a5a5a;line-height:1.8;margin-bottom:14px;}
+.lp-story-year{display:flex;align-items:center;gap:16px;margin-top:28px;padding-top:24px;border-top:1px solid #e2e2e2;}
+.lp-story-year-num{font-size:2.5rem;font-weight:900;color:#E8601C;letter-spacing:-2px;}
+.lp-story-year-label{font-size:.9rem;color:#5a5a5a;line-height:1.4;}
+@media(max-width:768px){.lp-story-grid{grid-template-columns:1fr;gap:36px;}}
+.lp-features-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;margin-top:52px;}
+.lp-feature-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:32px;transition:all .3s;position:relative;overflow:hidden;}
+.lp-feature-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#E8601C,#FF7A3A);opacity:0;transition:.3s;}
+.lp-feature-card:hover{border-color:rgba(232,96,28,.3);background:rgba(232,96,28,.04);transform:translateY(-3px);}
+.lp-feature-card:hover::before{opacity:1;}
+.lp-feature-icon{font-size:2rem;margin-bottom:18px;}
+.lp-feature-title{font-size:1.1rem;font-weight:800;color:#fff;margin-bottom:10px;}
+.lp-feature-desc{font-size:.88rem;color:rgba(255,255,255,.5);line-height:1.7;}
+.lp-purpose{background:linear-gradient(135deg,#0a0a0a 0%,#1a0f0a 100%);padding:96px 24px;position:relative;overflow:hidden;}
+.lp-purpose-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:300px;background:radial-gradient(ellipse,rgba(232,96,28,.1),transparent 70%);pointer-events:none;}
+.lp-purpose-inner{max-width:760px;margin:0 auto;text-align:center;position:relative;z-index:1;}
+.lp-purpose-quote{font-size:clamp(1.5rem,4vw,2.2rem);font-weight:900;color:#fff;line-height:1.35;letter-spacing:-.5px;margin-bottom:24px;}
+.lp-purpose-quote em{color:#E8601C;font-style:normal;}
+.lp-purpose-text{font-size:.95rem;color:rgba(255,255,255,.5);line-height:1.8;}
+.lp-testimonials-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px;margin-top:52px;}
+.lp-tcard{background:#fff;border:1px solid #e2e2e2;border-radius:12px;padding:28px;transition:all .25s;}
+.lp-tcard:hover{border-color:rgba(232,96,28,.3);box-shadow:0 12px 36px rgba(0,0,0,.08);transform:translateY(-2px);}
+.lp-tcard-stars{color:#E8601C;font-size:1rem;margin-bottom:14px;letter-spacing:2px;}
+.lp-tcard-text{font-size:.92rem;color:#2a2a2a;line-height:1.75;font-style:italic;margin-bottom:20px;}
+.lp-tcard-author{display:flex;align-items:center;gap:12px;}
+.lp-tcard-avatar{width:40px;height:40px;border-radius:50%;background:rgba(232,96,28,.12);border:2px solid rgba(232,96,28,.3);display:flex;align-items:center;justify-content:center;font-weight:800;color:#E8601C;font-size:.9rem;flex-shrink:0;}
+.lp-tcard-name{font-weight:700;font-size:.88rem;}
+.lp-tcard-role{font-size:.75rem;color:#9a9a9a;margin-top:2px;}
+.lp-cta{background:#E8601C;padding:80px 24px;text-align:center;}
+.lp-cta-title{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:900;color:#fff;letter-spacing:-1px;margin-bottom:14px;}
+.lp-cta-sub{font-size:1rem;color:rgba(255,255,255,.75);margin-bottom:36px;}
+.lp-cta-btn{background:#fff;color:#E8601C;padding:14px 40px;border-radius:4px;font-family:'Inter',sans-serif;font-size:1rem;font-weight:800;border:none;cursor:pointer;transition:all .25s;letter-spacing:.3px;}
+.lp-cta-btn:hover{background:#f9f9f9;transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.2);}
+.lp-footer{background:#0a0a0a;padding:32px 48px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,.06);flex-wrap:wrap;gap:16px;}
+.lp-footer-logo{font-size:.95rem;font-weight:900;letter-spacing:4px;color:rgba(255,255,255,.4);}
+.lp-footer-logo span{color:#E8601C;}
+.lp-footer-copy{font-size:.72rem;color:rgba(255,255,255,.25);letter-spacing:.5px;}
+.lp-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;}
+.lp-modal-overlay.open{display:flex;}
+.lp-modal{background:#fff;border-radius:16px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.5);animation:modal-in .25s cubic-bezier(.4,0,.2,1);}
+@keyframes modal-in{from{opacity:0;transform:scale(.95) translateY(16px);}to{opacity:1;transform:none;}}
+.lp-modal-header{background:#0a0a0a;padding:28px 32px 24px;position:relative;}
+.lp-modal-header::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#E8601C,#FF7A3A);}
+.lp-modal-logo{font-size:1.1rem;font-weight:900;letter-spacing:4px;color:#fff;margin-bottom:4px;}
+.lp-modal-logo span{color:#E8601C;}
+.lp-modal-subtitle{font-size:.75rem;color:rgba(255,255,255,.4);letter-spacing:1px;}
+.lp-modal-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.5);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:.2s;}
+.lp-modal-close:hover{background:rgba(255,255,255,.15);color:#fff;}
+.lp-modal-body{padding:28px 32px 32px;}
+.lp-modal-hint{background:rgba(232,96,28,.07);border:1px solid rgba(232,96,28,.2);border-radius:6px;padding:10px 14px;font-size:.78rem;color:#5a5a5a;margin-bottom:20px;line-height:1.5;}
+.lp-modal-hint b{color:#E8601C;}
+.lp-modal-err{color:#E53030;font-size:.78rem;text-align:center;margin-top:10px;min-height:20px;}
+.fade-up{opacity:0;transform:translateY(30px);transition:opacity .6s cubic-bezier(.4,0,.2,1),transform .6s cubic-bezier(.4,0,.2,1);}
+.fade-up.visible{opacity:1;transform:none;}
+</style>
+</head>
+<body style="margin:0;padding:0;font-family:'Inter',system-ui,sans-serif;background:#0a0a0a">
+
+<nav class="lp-nav" id="lp-nav">
+  <a href="/" class="lp-logo"><div class="lp-logo-dot"></div>PIT STOP</a>
+  <div class="lp-nav-links">
+    <a href="#sobre">Sobre</a>
+    <a href="#funcionalidades">Funcionalidades</a>
+    <a href="#proposito">Propósito</a>
+    <a href="#avaliacoes">Avaliações</a>
+  </div>
+  <button class="lp-btn-login" onclick="abrirLogin()">Entrar na plataforma →</button>
+</nav>
+
+<section class="lp-hero">
+  <div class="lp-hero-bg"></div>
+  <div class="lp-hero-glow"></div>
+  <div class="lp-hero-content">
+    <div class="lp-hero-badge">🏁 Gestão Automotiva · 2026</div>
+    <h1 class="lp-hero-title">Sua garagem,<br><span>digital e inteligente.</span></h1>
+    <p class="lp-hero-sub">Controle o histórico completo de revisões, manutenções e gastos de todos os seus veículos em um único lugar — com laudos digitais e alertas automáticos.</p>
+    <div class="lp-hero-cta">
+      <button class="btn-main" onclick="abrirLogin()">Acessar minha garagem →</button>
+      <a href="#sobre" class="btn-sec">Saiba mais ↓</a>
+    </div>
+    <div class="lp-hero-stats">
+      <div class="lp-stat"><div class="lp-stat-num">27+</div><div class="lp-stat-label">Modelos catalogados</div></div>
+      <div class="lp-stat"><div class="lp-stat-num">100%</div><div class="lp-stat-label">Digital e gratuito</div></div>
+      <div class="lp-stat"><div class="lp-stat-num">5 ⭐</div><div class="lp-stat-label">Avaliação dos usuários</div></div>
     </div>
   </div>
-  <div class="login-right">
-    <div style="width:100%;max-width:360px">
-      <div class="login-logo">PIT <span>STOP</span></div>
-      <div class="login-tag">Gestão automotiva completa</div>
-      <div class="login-hint">🎓 Demo acadêmico — acesse com:<br><b>aluno</b> / <b>senha123</b></div>
+</section>
+
+<section class="lp-section lp-section-light" id="sobre">
+  <div class="lp-container">
+    <div class="lp-story-grid">
+      <div class="lp-story-img fade-up">
+        <img src="https://images.unsplash.com/photo-1625047509248-ec889cbff17f?q=80&w=800&auto=format" alt="Pit Stop — nascemos nas oficinas">
+      </div>
+      <div class="lp-story-text fade-up">
+        <div class="lp-section-tag">Nossa história</div>
+        <h2 class="lp-section-title" style="color:#0a0a0a">Como surgimos</h2>
+        <p class="large">Nascemos de uma frustração real: a dificuldade de manter o histórico de manutenção dos carros organizado.</p>
+        <p>Cadernos perdidos, recibos rasgados, datas esquecidas. Quantas vezes você foi trocar o óleo sem saber exatamente quando foi a última vez? Ou perdeu a garantia por não ter o comprovante?</p>
+        <p>O <strong>Pit Stop</strong> surgiu como um projeto do CEUB para resolver exatamente isso — transformar a gestão automotiva em algo simples, digital e acessível para qualquer pessoa.</p>
+        <div class="lp-story-year">
+          <div class="lp-story-year-num">2026</div>
+          <div class="lp-story-year-label">Ano de fundação<br><span style="color:#9a9a9a">Projeto Integrador · Ciência da Computação · CEUB</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="lp-section lp-section-dark" id="funcionalidades">
+  <div class="lp-container">
+    <div class="fade-up" style="text-align:center;margin-bottom:52px">
+      <div class="lp-section-tag" style="display:inline-block">O que fazemos</div>
+      <h2 class="lp-section-title" style="color:#fff;margin-bottom:12px">Tudo que sua garagem precisa</h2>
+      <p class="lp-section-sub" style="color:rgba(255,255,255,.45);margin:0 auto">Uma plataforma completa para quem leva a sério o cuidado com seus veículos.</p>
+    </div>
+    <div class="lp-features-grid">
+      <div class="lp-feature-card fade-up"><div class="lp-feature-icon">🏎️</div><div class="lp-feature-title">Garagem Digital</div><div class="lp-feature-desc">Cadastre todos os seus veículos com dados completos: motor, potência, câmbio, quilometragem e foto. Tudo num só lugar.</div></div>
+      <div class="lp-feature-card fade-up"><div class="lp-feature-icon">📋</div><div class="lp-feature-title">Laudos de Revisão</div><div class="lp-feature-desc">Registre revisões com checklist de 20 itens. Cada revisão gera um documento digital numerado (REV-AAAA-NNN) para imprimir ou compartilhar.</div></div>
+      <div class="lp-feature-card fade-up"><div class="lp-feature-icon">🔧</div><div class="lp-feature-title">Histórico de Manutenções</div><div class="lp-feature-desc">Registre troca de óleo, freios, pneus e qualquer serviço. Acompanhe o gasto total e a próxima manutenção.</div></div>
+      <div class="lp-feature-card fade-up"><div class="lp-feature-icon">⚠️</div><div class="lp-feature-title">Alertas Inteligentes</div><div class="lp-feature-desc">Receba alertas automáticos quando uma revisão estiver atrasada ou próxima do prazo. Nunca mais esqueça a manutenção.</div></div>
+      <div class="lp-feature-card fade-up"><div class="lp-feature-icon">📊</div><div class="lp-feature-title">Dashboard com Gráficos</div><div class="lp-feature-desc">Visualize seus gastos por mês em gráficos interativos. Saiba exatamente quanto investiu em cada veículo.</div></div>
+      <div class="lp-feature-card fade-up"><div class="lp-feature-icon">🇧🇷</div><div class="lp-feature-title">Catálogo Brasileiro</div><div class="lp-feature-desc">Explore 27 modelos dos carros mais populares do Brasil com specs completas: motor, consumo, preço e mais.</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="lp-purpose" id="proposito">
+  <div class="lp-purpose-glow"></div>
+  <div class="lp-purpose-inner">
+    <div class="lp-section-tag" style="display:inline-block;margin-bottom:24px">Nosso propósito</div>
+    <p class="lp-purpose-quote fade-up">"Acreditamos que <em>cuidar bem do seu carro</em> começa com ter as informações certas, no momento certo."</p>
+    <p class="lp-purpose-text fade-up">O Pit Stop existe para democratizar o acesso a uma gestão automotiva profissional. Não importa se você tem um carro popular ou um premium — você merece saber o histórico completo do seu veículo, evitar surpresas mecânicas e ter controle total dos seus gastos. Simples assim.</p>
+  </div>
+</section>
+
+<section class="lp-section lp-section-light" id="avaliacoes">
+  <div class="lp-container">
+    <div class="fade-up" style="text-align:center">
+      <div class="lp-section-tag" style="display:inline-block">Depoimentos</div>
+      <h2 class="lp-section-title" style="color:#0a0a0a">O que nossos usuários dizem</h2>
+      <p class="lp-section-sub" style="margin:0 auto 52px">Pessoas reais que transformaram a forma como cuidam dos seus carros.</p>
+    </div>
+    <div class="lp-testimonials-grid">
+      <div class="lp-tcard fade-up"><div class="lp-tcard-stars">★★★★★</div><p class="lp-tcard-text">"Finalmente consigo saber quando foi a última troca de óleo do meu Polo. O laudo digital é incrível — imprimo e deixo na luva do carro."</p><div class="lp-tcard-author"><div class="lp-tcard-avatar">M</div><div><div class="lp-tcard-name">Marcos Oliveira</div><div class="lp-tcard-role">VW Polo 2019 · Brasília/DF</div></div></div></div>
+      <div class="lp-tcard fade-up"><div class="lp-tcard-stars">★★★★★</div><p class="lp-tcard-text">"Os alertas automáticos me salvaram! Recebi o aviso de revisão atrasada da minha BMW antes de uma viagem longa. Evitei um problema sério."</p><div class="lp-tcard-author"><div class="lp-tcard-avatar">A</div><div><div class="lp-tcard-name">Ana Carolina</div><div class="lp-tcard-role">BMW X1 2015 · São Paulo/SP</div></div></div></div>
+      <div class="lp-tcard fade-up"><div class="lp-tcard-stars">★★★★★</div><p class="lp-tcard-text">"Tenho 3 carros e controlava tudo em planilha. O Pit Stop simplificou completamente minha vida. O dashboard de gastos por mês é excelente."</p><div class="lp-tcard-author"><div class="lp-tcard-avatar">R</div><div><div class="lp-tcard-name">Roberto Santos</div><div class="lp-tcard-role">3 veículos · Goiânia/GO</div></div></div></div>
+      <div class="lp-tcard fade-up"><div class="lp-tcard-stars">★★★★★</div><p class="lp-tcard-text">"Comprei um carro usado e não sabia o histórico. Comecei a registrar tudo desde o dia da compra. Agora tenho um histórico completo e organizado."</p><div class="lp-tcard-author"><div class="lp-tcard-avatar">F</div><div><div class="lp-tcard-name">Fernanda Lima</div><div class="lp-tcard-role">HB20 2022 · Cuiabá/MT</div></div></div></div>
+      <div class="lp-tcard fade-up"><div class="lp-tcard-stars">★★★★★</div><p class="lp-tcard-text">"Mostrei o Pit Stop pro meu mecânico e ele adorou. Agora ele registra as revisões na plataforma e eu recebo o laudo digital na hora."</p><div class="lp-tcard-author"><div class="lp-tcard-avatar">G</div><div><div class="lp-tcard-name">Gabriel Mendes</div><div class="lp-tcard-role">Tracker 2023 · BH/MG</div></div></div></div>
+      <div class="lp-tcard fade-up"><div class="lp-tcard-stars">★★★★★</div><p class="lp-tcard-text">"Interface bonita, rápida e fácil. Em 5 minutos já tinha meu carro cadastrado e o histórico preenchido. Recomendo demais!"</p><div class="lp-tcard-author"><div class="lp-tcard-avatar">J</div><div><div class="lp-tcard-name">Juliana Costa</div><div class="lp-tcard-role">Onix 2021 · Porto Alegre/RS</div></div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="lp-cta">
+  <div class="lp-container">
+    <h2 class="lp-cta-title fade-up">Pronto para organizar sua garagem?</h2>
+    <p class="lp-cta-sub fade-up">Acesso gratuito. Sem complicação. Comece agora.</p>
+    <button class="lp-cta-btn" onclick="abrirLogin()">Criar minha conta gratuita →</button>
+  </div>
+</section>
+
+<footer class="lp-footer">
+  <div class="lp-footer-logo">PIT <span>STOP</span></div>
+  <div class="lp-footer-copy">© 2026 Pit Stop — Gestão Automotiva · Projeto Integrador CEUB</div>
+</footer>
+
+<div class="lp-modal-overlay" id="loginModal" onclick="fecharLogin(event)">
+  <div class="lp-modal" onclick="event.stopPropagation()">
+    <div class="lp-modal-header">
+      <div class="lp-modal-logo">PIT <span>STOP</span></div>
+      <div class="lp-modal-subtitle">Acesse sua garagem digital</div>
+      <button class="lp-modal-close" onclick="fecharLogin(null)">✕</button>
+    </div>
+    <div class="lp-modal-body">
+      <div class="lp-modal-hint">🎓 Demo acadêmico · Acesse com <b>aluno</b> / <b>senha123</b></div>
       <div class="form-group">
         <label class="form-label">Usuário</label>
-        <input class="form-input" id="us" placeholder="aluno" autocomplete="username">
+        <input class="form-input" id="lp-us" placeholder="aluno" autocomplete="username">
       </div>
       <div class="form-group">
         <label class="form-label">Senha</label>
-        <input class="form-input" type="password" id="pw" placeholder="••••••••" autocomplete="current-password">
+        <input class="form-input" type="password" id="lp-pw" placeholder="••••••••" autocomplete="current-password">
       </div>
-      <button class="btn btn-primary btn-full" style="height:50px;font-size:1rem" onclick="login()">Entrar →</button>
-      <div id="lerr" style="color:#E53030;font-size:.82rem;text-align:center;margin-top:10px"></div>
+      <button class="btn btn-primary btn-full" id="lp-loginbtn" style="height:48px;font-size:.95rem;margin-top:4px" onclick="fazerLogin()">Entrar na plataforma →</button>
+      <div class="lp-modal-err" id="lp-err"></div>
     </div>
   </div>
-  <div id="toasts"></div>
-  <script src="/main.js?v=4"></script>
-  <script>
-  document.getElementById('pw').addEventListener('keydown',function(e){if(e.key==='Enter')login();});
-  document.getElementById('us').addEventListener('keydown',function(e){if(e.key==='Enter')login();});
-  async function login(){
-    var u=document.getElementById('us').value, p=document.getElementById('pw').value;
-    if(!u||!p){document.getElementById('lerr').textContent='Preencha usuário e senha.';return;}
-    var res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario:u,senha:p})});
-    var j=await res.json();
-    if(j.ok){window.location.href='/dashboard';}
-    else{document.getElementById('lerr').textContent='Usuário ou senha incorretos.';}
-  }
-  </script>
+</div>
+
+<div id="toasts"></div>
+<script src="/main.js?v=4"></script>
+<script>
+window.addEventListener('scroll',function(){document.getElementById('lp-nav').classList.toggle('scrolled',window.scrollY>40);});
+var obs=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:.12});
+document.querySelectorAll('.fade-up').forEach(function(el){obs.observe(el);});
+document.querySelectorAll('a[href^="#"]').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();var t=document.querySelector(this.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'});});});
+function abrirLogin(){document.getElementById('loginModal').classList.add('open');setTimeout(function(){document.getElementById('lp-us').focus();},200);}
+function fecharLogin(e){if(!e||e.target===document.getElementById('loginModal'))document.getElementById('loginModal').classList.remove('open');}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')fecharLogin(null);});
+document.getElementById('lp-pw').addEventListener('keydown',function(e){if(e.key==='Enter')fazerLogin();});
+document.getElementById('lp-us').addEventListener('keydown',function(e){if(e.key==='Enter')fazerLogin();});
+async function fazerLogin(){
+  var u=document.getElementById('lp-us').value.trim(),p=document.getElementById('lp-pw').value.trim(),err=document.getElementById('lp-err'),btn=document.getElementById('lp-loginbtn');
+  if(!u||!p){err.textContent='Preencha usuário e senha.';return;}
+  err.textContent='';btn.textContent='Entrando...';btn.disabled=true;
+  var res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario:u,senha:p})});
+  var j=await res.json();
+  if(j.ok){window.location.href='/dashboard';}
+  else{err.textContent='Usuário ou senha incorretos.';btn.textContent='Entrar na plataforma →';btn.disabled=false;}
+}
+</script>
 </body></html>`);
 });
+
+
 
 // ─── DASHBOARD ─────────────────────────────────────────────────────────────────
 app.get('/dashboard', logado, (q, r) => {
@@ -315,6 +566,37 @@ app.get('/veiculo/:id', logado, (q, r) => {
     <td style="color:var(--gray-600)">${m.proxima_data || '—'}</td>
     <td><button class="btn btn-danger btn-sm" onclick="remover(${m.id})">Remover</button></td>
   </tr>`).join('');
+  const vRevs = (db.revisoes || []).filter(rv => rv.veiculo_id === v.id).sort((a, b) => b.data.localeCompare(a.data));
+  const revCardsHtml = vRevs.length ? vRevs.map(rv => {
+    const sr = situacaoRev(rv);
+    const sitCls2 = sr.tipo === 'ok' ? 'rev-ok' : sr.tipo === 'critico' ? 'rev-cr' : 'rev-av';
+    const itensR = rv.itens_revisados || {};
+    const totalR = Object.keys(itensR).length;
+    const aprovR = Object.values(itensR).filter(x => x === 'aprovado').length;
+    const atencR = Object.values(itensR).filter(x => x === 'atencao').length;
+    return `<div class="rev-card" style="margin-bottom:12px">
+      <div class="rev-card-header">
+        <div>
+          <div class="rev-doc-num">${rv.numero_doc}</div>
+          <div class="rev-card-title">${rv.tipo}</div>
+          <div class="rev-card-sub">${rv.data} · ${rv.oficina || '—'} · Mec: ${rv.mecanico || '—'}</div>
+        </div>
+        <span class="rev-status ${sitCls2}">${sr.texto}</span>
+      </div>
+      <div class="rev-card-body">
+        <div class="rev-mini-stats">
+          <div><span class="rev-mini-val" style="color:var(--ok)">${aprovR}</span><span class="rev-mini-label">Aprovados</span></div>
+          <div><span class="rev-mini-val" style="color:var(--av)">${atencR}</span><span class="rev-mini-label">Atenção</span></div>
+          <div><span class="rev-mini-val" style="color:var(--or)">${totalR > 0 ? Math.round(aprovR/totalR*100) : 0}%</span><span class="rev-mini-label">Saúde</span></div>
+          <div><span class="rev-mini-val" style="color:var(--or)">R$ ${brl(rv.custo)}</span><span class="rev-mini-label">Custo</span></div>
+        </div>
+        <div class="rev-card-actions">
+          <a href="/revisao/${rv.id}/documento" class="btn btn-outline btn-sm">📄 Ver Laudo</a>
+          <button class="btn btn-danger btn-sm" onclick="removerRev(${rv.id})">Remover</button>
+        </div>
+      </div>
+    </div>`;}).join('') : `<div class="no-items" style="padding:32px;text-align:center">Nenhuma revisão registrada para este veículo.</div>`;
+
   r.send(pg(v.modelo, q.session.user, `
   <div class="page-header an an-d1">
     <div><div class="page-title"><span>${v.modelo}</span></div><div class="page-subtitle">${v.marca} · ${v.ano}${v.cor ? ' · ' + v.cor : ''}</div></div>
@@ -339,14 +621,31 @@ app.get('/veiculo/:id', logado, (q, r) => {
     <div class="stat-card"><div class="stat-label">Manutenções</div><div class="stat-value blue">${ms.length}</div><div class="stat-detail">registradas</div></div>
     <div class="chart-card"><div class="section-label">Gastos por mês</div><canvas id="gv" height="130"></canvas></div>
   </div>
-  <div class="section-label an an-d5">Histórico de manutenções</div>
-  <div class="table-wrap an an-d6"><table><thead><tr><th>Serviço</th><th>Descrição</th><th>Oficina</th><th>KM</th><th>Valor</th><th>Data</th><th>Próxima</th><th></th></tr></thead>
-  <tbody>${histHtml || '<tr><td colspan="8" class="no-items">Nenhuma manutenção registrada.</td></tr>'}</tbody></table></div>`,
+  <div class="veiculo-tabs an an-d5">
+    <button class="vtab-btn vtab-active" onclick="showTab('manut')">🔧 Manutenções (${ms.length})</button>
+    <button class="vtab-btn" onclick="showTab('revisoes')">📋 Revisões (${vRevs.length})</button>
+  </div>
+  <div id="tab-manut">
+    <div class="table-wrap"><table><thead><tr><th>Serviço</th><th>Descrição</th><th>Oficina</th><th>KM</th><th>Valor</th><th>Data</th><th>Próxima</th><th></th></tr></thead>
+    <tbody>${histHtml || '<tr><td colspan="8" class="no-items">Nenhuma manutenção registrada.</td></tr>'}</tbody></table></div>
+    <div style="margin-top:12px;text-align:right"><a href="/manutencao/${v.id}" class="btn btn-ghost btn-sm">+ Registrar manutenção</a></div>
+  </div>
+  <div id="tab-revisoes" style="display:none">
+    ${revCardsHtml}
+    <div style="margin-top:12px;text-align:right"><a href="/revisao/nova?vid=${v.id}" class="btn btn-primary btn-sm">+ Nova revisão</a></div>
+  </div>`,
     `<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 function toggleMobile(){document.getElementById('mobileMenu').classList.toggle('open');}
 var gv=document.getElementById('gv');if(gv)new Chart(gv,{type:'line',data:{labels:${JSON.stringify(meses)},datasets:[{label:'R$',data:${JSON.stringify(meses.map(m => mmap[m]))},borderColor:'#E8601C',backgroundColor:'rgba(232,96,28,.1)',tension:.4,fill:true,pointBackgroundColor:'#E8601C',pointRadius:5}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#9a9a9a'}},y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#9a9a9a',callback:function(v){return'R$'+v;}}}}}});
 async function remover(id){if(!confirm('Remover esta manutenção?'))return;await fetch('/api/manut/'+id,{method:'DELETE'});toast('Manutenção removida','av');setTimeout(function(){location.reload();},900);}
+async function removerRev(id){if(!confirm('Remover esta revisão?'))return;await fetch('/api/revisoes/'+id,{method:'DELETE'});toast('Revisão removida','av');setTimeout(function(){location.reload();},900);}
+function showTab(t){
+  document.getElementById('tab-manut').style.display=t==='manut'?'block':'none';
+  document.getElementById('tab-revisoes').style.display=t==='revisoes'?'block':'none';
+  document.querySelectorAll('.vtab-btn').forEach(function(b){b.classList.remove('vtab-active');});
+  event.target.classList.add('vtab-active');
+}
 </script>`, '/garagem'));
 });
 
@@ -464,6 +763,352 @@ async function salvar(){
   else toast('Erro ao salvar.','erro');
 }
 </script>`, '/garagem'));
+});
+
+// ─── REVISÕES ─────────────────────────────────────────────────────────────────
+const ITENS_CHECKLIST = [
+  { key: 'oleo_filtro', label: 'Óleo e Filtro de Óleo' },
+  { key: 'filtro_ar', label: 'Filtro de Ar' },
+  { key: 'filtro_combustivel', label: 'Filtro de Combustível' },
+  { key: 'freios_dianteiros', label: 'Freios Dianteiros' },
+  { key: 'freios_traseiros', label: 'Freios Traseiros' },
+  { key: 'pneus', label: 'Pneus e Calibragem' },
+  { key: 'alinhamento_balanceamento', label: 'Alinhamento e Balanceamento' },
+  { key: 'suspensao_dianteira', label: 'Suspensão Dianteira' },
+  { key: 'suspensao_traseira', label: 'Suspensão Traseira' },
+  { key: 'bateria', label: 'Bateria' },
+  { key: 'correia_dentada', label: 'Correia Dentada' },
+  { key: 'sistema_arrefecimento', label: 'Sistema de Arrefecimento' },
+  { key: 'fluido_freio', label: 'Fluido de Freio' },
+  { key: 'fluido_direcao', label: 'Fluido de Direção' },
+  { key: 'ar_condicionado', label: 'Ar-Condicionado' },
+  { key: 'luzes_sinalizacao', label: 'Luzes e Sinalização' },
+  { key: 'escapamento', label: 'Sistema de Escapamento' },
+  { key: 'coxins', label: 'Coxins do Motor' },
+  { key: 'velas_ignicao', label: 'Velas de Ignição' },
+  { key: 'limpadores', label: 'Limpadores de Para-brisa' },
+];
+
+function statusRevIcon(s) {
+  if (s === 'aprovado') return '<span class="rev-check aprovado">✓ Aprovado</span>';
+  if (s === 'atencao') return '<span class="rev-check atencao">⚠ Atenção</span>';
+  return '<span class="rev-check nao_verificado">— Não verificado</span>';
+}
+
+function situacaoRev(rv) {
+  if (!rv.proxima_data) return { tipo: 'ok', texto: '✓ Em dia' };
+  const hoje = new Date(); const lim30 = new Date(); lim30.setDate(hoje.getDate() + 30);
+  const d = new Date(rv.proxima_data);
+  if (d < hoje) return { tipo: 'critico', texto: '⚠ Revisão atrasada' };
+  if (d <= lim30) return { tipo: 'aviso', texto: '⏰ Revisão próxima' };
+  return { tipo: 'ok', texto: '✓ Em dia' };
+}
+
+app.get('/revisoes', logado, (q, r) => {
+  const db = lerDB();
+  const vs = db.veiculos.filter(v => v.usuario === q.session.user);
+  const vsMap = {}; vs.forEach(v => { vsMap[v.id] = v; });
+  const revs = (db.revisoes || []).filter(rv => vsMap[rv.veiculo_id]).sort((a, b) => b.data.localeCompare(a.data));
+  const totCusto = revs.reduce((s, rv) => s + (parseFloat(rv.custo) || 0), 0);
+  const hoje = new Date();
+  const atrasadas = revs.filter(rv => rv.proxima_data && new Date(rv.proxima_data) < hoje).length;
+  const proximas = revs.filter(rv => {
+    if (!rv.proxima_data) return false;
+    const d = new Date(rv.proxima_data); const lim = new Date(); lim.setDate(hoje.getDate() + 30);
+    return d >= hoje && d <= lim;
+  }).length;
+
+  const timelineHtml = revs.length ? revs.map((rv, i) => {
+    const v = vsMap[rv.veiculo_id] || {};
+    const s = situacaoRev(rv);
+    const sitCls = s.tipo === 'ok' ? 'rev-ok' : s.tipo === 'critico' ? 'rev-cr' : 'rev-av';
+    const itens = rv.itens_revisados || {};
+    const total = Object.keys(itens).length;
+    const aprovados = Object.values(itens).filter(x => x === 'aprovado').length;
+    const atencoes = Object.values(itens).filter(x => x === 'atencao').length;
+    return `
+    <div class="rev-timeline-item an an-d${Math.min(i + 2, 6)}">
+      <div class="rev-timeline-dot ${sitCls}-dot"></div>
+      <div class="rev-card">
+        <div class="rev-card-header">
+          <div>
+            <div class="rev-doc-num">${rv.numero_doc}</div>
+            <div class="rev-card-title">${rv.tipo}</div>
+            <div class="rev-card-sub">${v.modelo || '—'} · ${v.placa || '—'} · ${rv.data}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+            <span class="rev-status ${sitCls}">${s.texto}</span>
+            <div style="font-size:.82rem;color:var(--gray-600)">Oficina: <b>${rv.oficina || '—'}</b></div>
+          </div>
+        </div>
+        <div class="rev-card-body">
+          <div class="rev-mini-stats">
+            <div><span class="rev-mini-val" style="color:var(--ok)">${aprovados}</span><span class="rev-mini-label">Aprovados</span></div>
+            <div><span class="rev-mini-val" style="color:var(--av)">${atencoes}</span><span class="rev-mini-label">Atenção</span></div>
+            <div><span class="rev-mini-val" style="color:var(--or)">${total > 0 ? Math.round(aprovados/total*100) : 0}%</span><span class="rev-mini-label">Saúde</span></div>
+            <div><span class="rev-mini-val">${rv.km_na_revisao ? Number(rv.km_na_revisao).toLocaleString('pt-BR') + ' km' : '—'}</span><span class="rev-mini-label">KM</span></div>
+            <div><span class="rev-mini-val" style="color:var(--or)">R$ ${brl(rv.custo)}</span><span class="rev-mini-label">Custo</span></div>
+          </div>
+          <div class="rev-card-actions">
+            <a href="/revisao/${rv.id}/documento" class="btn btn-outline btn-sm">📄 Ver Laudo</a>
+            <button class="btn btn-danger btn-sm" onclick="removerRev(${rv.id})">Remover</button>
+          </div>
+        </div>
+        ${rv.proxima_data ? `<div class="rev-proxima">📅 Próxima revisão: <b>${rv.proxima_data}</b>${rv.proxima_km ? ' · KM: <b>' + Number(rv.proxima_km).toLocaleString('pt-BR') + '</b>' : ''}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('') : `<div class="no-items" style="padding:48px;text-align:center;border:1px solid var(--gray-200);border-radius:var(--r);background:var(--white)">Nenhuma revisão registrada ainda.<br><a href="/revisao/nova" class="btn btn-primary" style="margin-top:16px;display:inline-flex">+ Registrar primeira revisão</a></div>`;
+
+  r.send(pg('Revisões', q.session.user, `
+  <div class="page-header an an-d1">
+    <div><div class="page-title">Revisões <span>Digitais</span></div><div class="page-subtitle">${revs.length} revisão(ões) registrada(s) em ${vs.length} veículo(s)</div></div>
+    <a href="/revisao/nova" class="btn btn-primary">+ Nova Revisão</a>
+  </div>
+  <div class="g4 an an-d2">
+    <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-label">Total de Revisões</div><div class="stat-value blue">${revs.length}</div><div class="stat-detail">documentos emitidos</div></div>
+    <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-label">Em dia</div><div class="stat-value green">${revs.length - atrasadas - proximas}</div><div class="stat-detail">revisões ok</div></div>
+    <div class="stat-card"><div class="stat-icon">⚠️</div><div class="stat-label">Atrasadas</div><div class="stat-value ${atrasadas ? 'red' : 'green'}">${atrasadas}</div><div class="stat-detail">precisam de atenção</div></div>
+    <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-label">Total investido</div><div class="stat-value orange">R$ ${brl(totCusto)}</div><div class="stat-detail">em revisões</div></div>
+  </div>
+  <div class="section-label an an-d3">Histórico de revisões</div>
+  <div class="rev-timeline an an-d4">${timelineHtml}</div>`,
+    `<script>
+function toggleMobile(){document.getElementById('mobileMenu').classList.toggle('open');}
+async function removerRev(id){
+  if(!confirm('Remover esta revisão?'))return;
+  await fetch('/api/revisoes/'+id,{method:'DELETE'});
+  toast('Revisão removida','av');
+  setTimeout(function(){location.reload();},900);
+}
+</script>`, '/revisoes'));
+});
+
+app.get('/revisao/nova', logado, (q, r) => {
+  const vs = lerDB().veiculos.filter(v => v.usuario === q.session.user);
+  if (!vs.length) return r.redirect('/cadastro');
+  const vid = q.query.vid ? parseInt(q.query.vid) : '';
+  const tipos = ['Revisão de 10.000 km', 'Revisão de 20.000 km', 'Revisão de 30.000 km', 'Revisão de 40.000 km', 'Revisão de 60.000 km', 'Revisão de 80.000 km', 'Revisão de 100.000 km', 'Revisão Simples', 'Revisão Completa', 'Revisão Pré-Viagem', 'Revisão Anual', 'Revisão Pós-Compra', 'Outro'];
+  const checklistHtml = ITENS_CHECKLIST.map(item => `
+    <div class="checklist-item" id="wrap_${item.key}">
+      <div class="checklist-label"><span class="checklist-icon" id="icon_${item.key}">⬜</span>${item.label}</div>
+      <div class="checklist-btns">
+        <button type="button" class="chk-btn chk-aprovado" onclick="setItem('${item.key}','aprovado')">✓ Ok</button>
+        <button type="button" class="chk-btn chk-atencao" onclick="setItem('${item.key}','atencao')">⚠ Atenção</button>
+        <button type="button" class="chk-btn chk-skip" onclick="setItem('${item.key}','nao_verificado')">— Pular</button>
+      </div>
+    </div>`).join('');
+  const veicOpts = vs.map(v => `<option value="${v.id}" ${v.id === vid ? 'selected' : ''}>${v.marca} ${v.modelo} (${v.ano}) — ${v.placa || 'sem placa'}</option>`).join('');
+  r.send(pg('Nova Revisão', q.session.user, `
+  <div class="page-header an an-d1">
+    <div><div class="page-title">Nova <span>Revisão</span></div><div class="page-subtitle">Preencha o formulário e o checklist de inspeção</div></div>
+    <a href="/revisoes" class="btn btn-ghost">← Voltar</a>
+  </div>
+  <div class="form-card an an-d2" style="max-width:900px">
+    <div class="alert" style="margin-bottom:22px">
+      📋 O documento de revisão será gerado automaticamente com número único (<b>REV-${new Date().getFullYear()}-NNN</b>) ao salvar.
+    </div>
+    <div class="section-label">Dados da revisão</div>
+    <div class="g2">
+      <div class="form-group"><label class="form-label">Veículo *</label><select class="form-input" id="rv_vid">${veicOpts}</select></div>
+      <div class="form-group"><label class="form-label">Tipo de revisão *</label><select class="form-input" id="rv_tipo">${tipos.map(t => '<option>' + t + '</option>').join('')}</select></div>
+      <div class="form-group"><label class="form-label">Data da revisão *</label><input class="form-input" type="date" id="rv_data"></div>
+      <div class="form-group"><label class="form-label">KM no momento</label><input class="form-input" type="number" id="rv_km" placeholder="Ex: 45000"></div>
+      <div class="form-group"><label class="form-label">Oficina / Centro automotivo</label><input class="form-input" id="rv_oficina" placeholder="Ex: AutoCenter Brasília"></div>
+      <div class="form-group"><label class="form-label">Mecânico responsável</label><input class="form-input" id="rv_mecanico" placeholder="Ex: João Silva"></div>
+      <div class="form-group"><label class="form-label">Valor total (R$)</label><input class="form-input" type="number" step="0.01" id="rv_custo" placeholder="Ex: 890"></div>
+      <div class="form-group"><label class="form-label">Data da próxima revisão</label><input class="form-input" type="date" id="rv_proxdata"></div>
+      <div class="form-group"><label class="form-label">KM da próxima revisão</label><input class="form-input" type="number" id="rv_proxkm" placeholder="Ex: 55000"></div>
+    </div>
+    <div class="form-group" style="grid-column:1/-1"><label class="form-label">Observações gerais</label><textarea class="form-input" id="rv_obs" rows="2" placeholder="Anote qualquer observação sobre o estado do veículo..."></textarea></div>
+    <div class="divider"></div>
+    <div class="section-label">Checklist de inspeção <span style="font-weight:400;font-size:.75rem;color:var(--gray-400);letter-spacing:0">— marque cada item abaixo</span></div>
+    <div id="chk_progress" style="margin-bottom:16px;font-size:.83rem;color:var(--gray-600)">0 / ${ITENS_CHECKLIST.length} itens marcados</div>
+    <div class="checklist-grid">${checklistHtml}</div>
+    <div style="display:flex;gap:12px;margin-top:28px">
+      <a href="/revisoes" class="btn btn-ghost" style="flex:1">Cancelar</a>
+      <button class="btn btn-primary" style="flex:2" onclick="salvarRev()">📋 Salvar e Gerar Documento</button>
+    </div>
+  </div>`,
+    `<script>
+function toggleMobile(){document.getElementById('mobileMenu').classList.toggle('open');}
+document.getElementById('rv_data').valueAsDate=new Date();
+var ITENS=${JSON.stringify(ITENS_CHECKLIST)};
+var estado={};
+for(var i=0;i<ITENS.length;i++){estado[ITENS[i].key]='nao_verificado';}
+function setItem(key,val){
+  estado[key]=val;
+  var wrap=document.getElementById('wrap_'+key);
+  var icon=document.getElementById('icon_'+key);
+  wrap.className='checklist-item chk-state-'+val;
+  icon.textContent=val==='aprovado'?'✅':val==='atencao'?'⚠️':'⬜';
+  atualizarProgresso();
+}
+function atualizarProgresso(){
+  var marcados=Object.values(estado).filter(function(v){return v!=='nao_verificado';}).length;
+  document.getElementById('chk_progress').textContent=marcados+' / '+ITENS.length+' itens marcados';
+}
+async function salvarRev(){
+  var vid=document.getElementById('rv_vid').value;
+  var tipo=document.getElementById('rv_tipo').value;
+  var data=document.getElementById('rv_data').value;
+  if(!vid||!tipo||!data){toast('Preencha veículo, tipo e data!','erro');return;}
+  var body={
+    veiculo_id:parseInt(vid),
+    tipo:tipo,
+    data:data,
+    km_na_revisao:document.getElementById('rv_km').value||null,
+    oficina:document.getElementById('rv_oficina').value,
+    mecanico:document.getElementById('rv_mecanico').value,
+    custo:parseFloat(document.getElementById('rv_custo').value)||0,
+    proxima_data:document.getElementById('rv_proxdata').value||null,
+    proxima_km:document.getElementById('rv_proxkm').value||null,
+    descricao:document.getElementById('rv_obs').value,
+    itens_revisados:estado,
+    status:'aprovado'
+  };
+  var res=await fetch('/api/revisoes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  var j=await res.json();
+  if(j.ok){toast('Revisão salva! Documento '+j.numero_doc+' gerado ✅');setTimeout(function(){window.location.href='/revisao/'+j.id+'/documento';},1200);}
+  else toast('Erro ao salvar.','erro');
+}
+</script>`, '/revisoes'));
+});
+
+app.get('/revisao/:id/documento', logado, (q, r) => {
+  const db = lerDB();
+  const rv = (db.revisoes || []).find(x => x.id === parseInt(q.params.id));
+  if (!rv) return r.redirect('/revisoes');
+  const v = db.veiculos.find(x => x.id === rv.veiculo_id && x.usuario === q.session.user);
+  if (!v) return r.redirect('/revisoes');
+  const itens = rv.itens_revisados || {};
+  const checkHtml = ITENS_CHECKLIST.map(item => {
+    const s = itens[item.key] || 'nao_verificado';
+    const icon = s === 'aprovado' ? '✅' : s === 'atencao' ? '⚠️' : '—';
+    const cls = s === 'aprovado' ? 'doc-item-ok' : s === 'atencao' ? 'doc-item-av' : 'doc-item-skip';
+    return `<div class="doc-check-item ${cls}"><span class="doc-check-icon">${icon}</span><span>${item.label}</span></div>`;
+  }).join('');
+  const aprovados = Object.values(itens).filter(x => x === 'aprovado').length;
+  const atencoes = Object.values(itens).filter(x => x === 'atencao').length;
+  const total = ITENS_CHECKLIST.length;
+  const saude = total > 0 ? Math.round(aprovados / total * 100) : 0;
+  r.send(`<!DOCTYPE html><html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Laudo ${rv.numero_doc} — Pit Stop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="/style.css?v=4">
+<style>
+.doc-wrap{max-width:820px;margin:0 auto;padding:40px 20px;}
+.doc-header{background:var(--black);color:var(--white);border-radius:var(--r-lg) var(--r-lg) 0 0;padding:36px 40px;position:relative;overflow:hidden;}
+.doc-header::after{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--or),var(--or3));}
+.doc-logo{font-size:1.5rem;font-weight:900;letter-spacing:5px;color:var(--white);margin-bottom:4px;}
+.doc-logo span{color:var(--or);}
+.doc-num{font-size:2rem;font-weight:900;color:var(--or);letter-spacing:-1px;margin-bottom:4px;}
+.doc-tipo{font-size:1rem;color:rgba(255,255,255,.7);letter-spacing:1px;}
+.doc-body{background:var(--white);border:1px solid var(--gray-200);border-top:none;border-radius:0 0 var(--r-lg) var(--r-lg);padding:36px 40px;}
+.doc-section{margin-bottom:28px;}
+.doc-section-title{font-size:.62rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--gray-400);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;gap:10px;}
+.doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;}
+.doc-field{background:var(--gray-50);border:1px solid var(--gray-100);border-radius:var(--r-sm);padding:12px 16px;}
+.doc-field-label{font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gray-400);margin-bottom:4px;font-weight:700;}
+.doc-field-value{font-weight:700;font-size:.95rem;}
+.doc-checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;}
+.doc-check-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r-sm);border:1px solid var(--gray-100);font-size:.88rem;font-weight:500;}
+.doc-item-ok{background:rgba(29,185,84,.06);border-color:rgba(29,185,84,.2);}
+.doc-item-av{background:rgba(232,96,28,.07);border-color:rgba(232,96,28,.25);}
+.doc-item-skip{background:var(--gray-50);color:var(--gray-400);}
+.doc-check-icon{font-size:1rem;flex-shrink:0;}
+.doc-saude{display:flex;align-items:center;gap:24px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--r);padding:18px 22px;margin-bottom:20px;flex-wrap:wrap;}
+.doc-saude-num{font-size:2.5rem;font-weight:900;color:var(--or);letter-spacing:-2px;}
+.doc-assinatura{border-top:1px solid var(--gray-200);margin-top:28px;padding-top:20px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;}
+.doc-assin-box{text-align:center;}
+.doc-assin-line{width:160px;border-bottom:1.5px solid var(--black);margin:0 auto 6px;padding-bottom:4px;height:32px;display:flex;align-items:flex-end;justify-content:center;font-size:.8rem;color:var(--gray-400);}
+.doc-assin-label{font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray-400);}
+.doc-actions{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;}
+@media print{
+  .doc-actions,.topnav,.mobile-menu{display:none!important;}
+  .doc-wrap{padding:0;}
+  body{background:white!important;}
+}
+</style>
+</head><body>
+${topnav(q.session.user, '/revisoes')}
+<main class="main">
+<div class="doc-wrap">
+  <div class="doc-actions an an-d1">
+    <a href="/revisoes" class="btn btn-ghost">← Voltar às revisões</a>
+    <button onclick="window.print()" class="btn btn-primary">🖨️ Imprimir / Salvar PDF</button>
+  </div>
+  <div class="doc-header an an-d2">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:18px">
+      <div>
+        <div class="doc-logo">PIT <span>STOP</span></div>
+        <div style="font-size:.68rem;letter-spacing:2px;color:rgba(255,255,255,.45);text-transform:uppercase;margin-bottom:18px">Gestão Automotiva · Documento Digital</div>
+        <div class="doc-num">${rv.numero_doc}</div>
+        <div class="doc-tipo">${rv.tipo}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:.65rem;letter-spacing:2px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:4px">Data</div>
+        <div style="font-size:1.3rem;font-weight:700">${rv.data}</div>
+        <div style="font-size:.65rem;letter-spacing:2px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-top:10px;margin-bottom:4px">Oficina</div>
+        <div style="font-weight:700;color:rgba(255,255,255,.85)">${rv.oficina || '—'}</div>
+      </div>
+    </div>
+  </div>
+  <div class="doc-body an an-d3">
+    <div class="doc-section">
+      <div class="doc-section-title">🚗 Dados do veículo</div>
+      <div class="doc-grid">
+        <div class="doc-field"><div class="doc-field-label">Modelo</div><div class="doc-field-value">${v.modelo}</div></div>
+        <div class="doc-field"><div class="doc-field-label">Marca</div><div class="doc-field-value">${v.marca}</div></div>
+        <div class="doc-field"><div class="doc-field-label">Ano</div><div class="doc-field-value">${v.ano}</div></div>
+        <div class="doc-field"><div class="doc-field-label">Placa</div><div class="doc-field-value">${v.placa || '—'}</div></div>
+        <div class="doc-field"><div class="doc-field-label">Motor</div><div class="doc-field-value">${v.motor || '—'}</div></div>
+        <div class="doc-field"><div class="doc-field-label">KM na revisão</div><div class="doc-field-value" style="color:var(--or)">${rv.km_na_revisao ? Number(rv.km_na_revisao).toLocaleString('pt-BR') + ' km' : '—'}</div></div>
+      </div>
+    </div>
+    <div class="doc-section">
+      <div class="doc-section-title">📊 Resultado da inspeção</div>
+      <div class="doc-saude">
+        <div><div class="doc-saude-num">${saude}%</div><div style="font-size:.75rem;color:var(--gray-600)">Saúde geral</div></div>
+        <div style="display:flex;gap:20px;flex-wrap:wrap">
+          <div style="text-align:center"><div style="font-size:1.5rem;font-weight:900;color:var(--ok)">${aprovados}</div><div style="font-size:.75rem;color:var(--gray-600)">✅ Aprovados</div></div>
+          <div style="text-align:center"><div style="font-size:1.5rem;font-weight:900;color:var(--av)">${atencoes}</div><div style="font-size:.75rem;color:var(--gray-600)">⚠ Atenção</div></div>
+          <div style="text-align:center"><div style="font-size:1.5rem;font-weight:900;color:var(--gray-400)">${total - aprovados - atencoes}</div><div style="font-size:.75rem;color:var(--gray-600)">— Não verificado</div></div>
+        </div>
+        ${rv.proxima_data ? `<div style="margin-left:auto"><div style="font-size:.65rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray-400);margin-bottom:4px">Próxima revisão</div><div style="font-weight:700;font-size:1.1rem">${rv.proxima_data}</div>${rv.proxima_km ? '<div style="font-size:.82rem;color:var(--gray-400)">' + Number(rv.proxima_km).toLocaleString('pt-BR') + ' km</div>' : ''}</div>` : ''}
+      </div>
+    </div>
+    <div class="doc-section">
+      <div class="doc-section-title">🔧 Checklist de itens inspecionados</div>
+      <div class="doc-checks">${checkHtml}</div>
+    </div>
+    ${rv.descricao ? `<div class="doc-section"><div class="doc-section-title">📝 Observações</div><div style="background:var(--gray-50);border:1px solid var(--gray-100);border-radius:var(--r-sm);padding:16px 20px;font-size:.9rem;line-height:1.6;color:var(--gray-800)">${rv.descricao}</div></div>` : ''}
+    <div class="doc-section">
+      <div class="doc-section-title">👤 Responsável técnico</div>
+      <div class="doc-grid">
+        <div class="doc-field"><div class="doc-field-label">Mecânico</div><div class="doc-field-value">${rv.mecanico || '—'}</div></div>
+        <div class="doc-field"><div class="doc-field-label">Oficina</div><div class="doc-field-value">${rv.oficina || '—'}</div></div>
+        <div class="doc-field"><div class="doc-field-label">Custo total</div><div class="doc-field-value" style="color:var(--or)">R$ ${brl(rv.custo)}</div></div>
+        <div class="doc-field"><div class="doc-field-label">Documento</div><div class="doc-field-value">${rv.numero_doc}</div></div>
+      </div>
+    </div>
+    <div class="doc-assinatura">
+      <div style="font-size:.72rem;color:var(--gray-400);max-width:360px;line-height:1.5">
+        Este documento é gerado digitalmente pela plataforma <b>Pit Stop — Gestão Automotiva</b>.
+        Emitido em ${new Date().toLocaleDateString('pt-BR')} · ${rv.numero_doc}
+      </div>
+      <div class="doc-assin-box">
+        <div class="doc-assin-line">${rv.mecanico ? '<span style="font-size:.9rem;font-weight:600;color:var(--black)">' + rv.mecanico + '</span>' : ''}</div>
+        <div class="doc-assin-label">Mecânico responsável</div>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+<div id="toasts"></div>
+<script src="/main.js?v=4"></script>
+<script>function toggleMobile(){document.getElementById('mobileMenu').classList.toggle('open');}</script>
+</body></html>`);
 });
 
 // ─── EXPLORAR ──────────────────────────────────────────────────────────────────

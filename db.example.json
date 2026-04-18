@@ -1,0 +1,14 @@
+{
+  "usuarios": [
+    {
+      "usuario": "aluno",
+      "senha": "senha123"
+    }
+  ],
+  "veiculos": [],
+  "manutencoes": [],
+  "revisoes": [],
+  "nextV": 1,
+  "nextM": 1,
+  "nextR": 1
+}
