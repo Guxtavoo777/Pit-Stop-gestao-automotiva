@@ -11,8 +11,12 @@ yarn-error.log*
 
 # ─── Banco de dados ──────────────────────────────────────────────────────────
 # db.json incluído para referência/migração inicial
+*.db
 *.db-shm
 *.db-wal
+
+# ─── Config local Claude ──────────────────────────────────────────────────────
+.claude/settings.local.json
 
 # ─── Sistema operacional ─────────────────────────────────────────────────────
 .DS_Store
