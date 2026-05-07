@@ -19,6 +19,23 @@
   };
 })();
 
+/* ─── SCROLL ANIMATION OBSERVER ─────────────── */
+(function () {
+  function showAll() {
+    document.querySelectorAll('.an:not(.is-visible)').forEach(function (el) {
+      el.classList.add('is-visible');
+    });
+  }
+  if (!window.IntersectionObserver) { showAll(); return; }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.05 });
+  document.querySelectorAll('.an').forEach(function (el) { io.observe(el); });
+  setTimeout(showAll, 400);
+})();
+
 /* ─── LOADING STATE UTILITY ──────────────────── */
 function withLoading(btn, asyncFn) {
   var original = btn.innerHTML;
