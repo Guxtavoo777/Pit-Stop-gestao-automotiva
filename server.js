@@ -1,6 +1,10 @@
+require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 const path = require('path');
 const CARROS = require('./carros');
@@ -21,18 +25,31 @@ function salvarDB(d) { fs.writeFileSync(DB, JSON.stringify(d, null, 2)); }
 
 // ─── MIDDLEWARE ────────────────────────────────────────────────────────────────
 app.set('trust proxy', 1);
+app.use(helmet({ contentSecurityPolicy: false })); // security headers
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev')); // HTTP logging
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'pitstop_2026',
+  secret: process.env.SESSION_SECRET || 'pitstop_dev_secret_troque_em_producao',
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'lax',
     maxAge: 1000 * 60 * 60 * 24 * 7
   }
 }));
+
+// ─── RATE LIMITING ─────────────────────────────────────────────────────────────
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 20,
+  message: { ok: false, msg: 'Muitas tentativas. Tente novamente em 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // ─── HELPERS ───────────────────────────────────────────────────────────────────
 const logado = (q, r, n) => q.session.user ? n() : r.redirect('/');
@@ -101,13 +118,13 @@ app.locals.CARROS = CARROS;
 app.locals.ITENS_CHECKLIST = ITENS_CHECKLIST;
 
 // ─── API AUTH ──────────────────────────────────────────────────────────────────
-app.post('/api/login', async (q, r) => {
+app.post('/api/login', authLimiter, async (q, r) => {
   const { usuario, senha } = q.body;
-  if (!usuario || !senha) return r.json({ ok: false });
+  if (!usuario || !senha) return r.status(400).json({ ok: false, msg: 'Preencha todos os campos.' });
   const db = lerDB();
   if (!db.usuarios) db.usuarios = [];
   const u = db.usuarios.find(x => x.usuario === usuario);
-  if (!u) return r.json({ ok: false });
+  if (!u) return r.status(401).json({ ok: false });
 
   const isHash = u.senha.startsWith('$2');
   let valid = false;
@@ -121,27 +138,27 @@ app.post('/api/login', async (q, r) => {
     }
   }
 
-  if (!valid) return r.json({ ok: false });
+  if (!valid) return r.status(401).json({ ok: false });
   q.session.user = u.usuario;
   r.json({ ok: true });
 });
 
-app.post('/api/cadastro', async (q, r) => {
+app.post('/api/cadastro', authLimiter, async (q, r) => {
   const { usuario, senha, senha2, nome } = q.body;
-  if (!usuario || !senha) return r.json({ ok: false, msg: 'Preencha todos os campos.' });
-  if (senha !== senha2) return r.json({ ok: false, msg: 'As senhas não conferem.' });
-  if (senha.length < 6) return r.json({ ok: false, msg: 'A senha deve ter pelo menos 6 caracteres.' });
+  if (!usuario || !senha) return r.status(400).json({ ok: false, msg: 'Preencha todos os campos.' });
+  if (senha !== senha2) return r.status(400).json({ ok: false, msg: 'As senhas não conferem.' });
+  if (senha.length < 6) return r.status(400).json({ ok: false, msg: 'A senha deve ter pelo menos 6 caracteres.' });
   const usrRegex = /^[a-zA-Z0-9_]{3,20}$/;
-  if (!usrRegex.test(usuario)) return r.json({ ok: false, msg: 'Usuário: 3-20 caracteres, sem espaços ou acentos.' });
+  if (!usrRegex.test(usuario)) return r.status(400).json({ ok: false, msg: 'Usuário: 3-20 caracteres, sem espaços ou acentos.' });
   const db = lerDB();
   if (!db.usuarios) db.usuarios = [];
   if (usuario === 'aluno' || db.usuarios.find(x => x.usuario === usuario))
-    return r.json({ ok: false, msg: 'Este usuário já está em uso. Escolha outro.' });
+    return r.status(409).json({ ok: false, msg: 'Este usuário já está em uso. Escolha outro.' });
   const hash = await bcrypt.hash(senha, SALT_ROUNDS);
   db.usuarios.push({ usuario, senha: hash, nome: nome || usuario });
   salvarDB(db);
   q.session.user = usuario;
-  r.json({ ok: true });
+  r.status(201).json({ ok: true });
 });
 
 app.get('/logout', (q, r) => { q.session.destroy(() => r.redirect('/')); });
@@ -482,6 +499,17 @@ app.get('/oficinas', logado, (q, r) => {
     activePath: '/oficinas',
     OFICINAS,
   });
+});
+
+// ─── 404 ───────────────────────────────────────────────────────────────────────
+app.use((q, r) => {
+  r.status(404).render('404', { user: q.session.user || null });
+});
+
+// ─── ERROR HANDLER ─────────────────────────────────────────────────────────────
+app.use((err, q, r, next) => { // eslint-disable-line no-unused-vars
+  console.error(err.stack);
+  r.status(500).render('500', { user: q.session.user || null });
 });
 
 // ─── START ─────────────────────────────────────────────────────────────────────
