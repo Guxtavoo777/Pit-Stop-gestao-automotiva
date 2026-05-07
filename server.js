@@ -13,10 +13,19 @@ function lerDB() { return JSON.parse(fs.readFileSync(DB, 'utf8')); }
 function salvarDB(d) { fs.writeFileSync(DB, JSON.stringify(d, null, 2)); }
 
 // ─── MIDDLEWARE ────────────────────────────────────────────────────────────────
+app.set('trust proxy', 1); // Necessário para Railway/Heroku (proxy HTTPS reverso)
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(session({ secret: 'pitstop_2026', resave: false, saveUninitialized: false }));
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'pitstop_2026',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // HTTPS apenas em produção
+    maxAge: 1000 * 60 * 60 * 24 * 7 // 7 dias
+  }
+}));
 
 // ─── HELPERS ───────────────────────────────────────────────────────────────────
 const logado = (q, r, n) => q.session.user ? n() : r.redirect('/');
@@ -758,10 +767,15 @@ async function fazerLogin(){
   var err=document.getElementById('lp-err'),btn=document.getElementById('lp-loginbtn');
   if(!u||!p){err.textContent='Preencha usuário e senha.';return;}
   err.textContent='';btn.textContent='Entrando...';btn.disabled=true;
-  var res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario:u,senha:p})});
-  var j=await res.json();
-  if(j.ok){window.location.href='/dashboard';}
-  else{err.textContent='Usuário ou senha incorretos.';btn.textContent='Entrar na plataforma →';btn.disabled=false;}
+  try{
+    var res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario:u,senha:p})});
+    var j=await res.json();
+    if(j.ok){window.location.href='/dashboard';}
+    else{err.textContent='Usuário ou senha incorretos.';btn.textContent='Entrar na plataforma →';btn.disabled=false;}
+  }catch(e){
+    err.textContent='Erro de conexão. Tente novamente.';
+    btn.textContent='Entrar na plataforma →';btn.disabled=false;
+  }
 }
 
 async function fazerCadastro(){
@@ -773,10 +787,15 @@ async function fazerCadastro(){
   if(!u||!p||!p2){err.textContent='Preencha todos os campos obrigatórios.';return;}
   if(p!==p2){err.textContent='As senhas não conferem.';return;}
   err.textContent='';btn.textContent='Criando conta...';btn.disabled=true;
-  var res=await fetch('/api/cadastro',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario:u,senha:p,senha2:p2,nome:nome})});
-  var j=await res.json();
-  if(j.ok){window.location.href='/dashboard';}
-  else{err.textContent=j.msg||'Erro ao criar conta.';btn.textContent='Criar minha conta →';btn.disabled=false;}
+  try{
+    var res=await fetch('/api/cadastro',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario:u,senha:p,senha2:p2,nome:nome})});
+    var j=await res.json();
+    if(j.ok){window.location.href='/dashboard';}
+    else{err.textContent=j.msg||'Erro ao criar conta.';btn.textContent='Criar minha conta →';btn.disabled=false;}
+  }catch(e){
+    err.textContent='Erro de conexão. Tente novamente.';
+    btn.textContent='Criar minha conta →';btn.disabled=false;
+  }
 }
 </script>
 </body></html>`);
