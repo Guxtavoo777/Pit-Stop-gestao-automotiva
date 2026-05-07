@@ -1,8 +1,11 @@
 const express = require('express');
 const session = require('express-session');
+const bcrypt = require('bcrypt');
 const fs = require('fs');
 const path = require('path');
 const CARROS = require('./carros');
+
+const SALT_ROUNDS = 10;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,7 +39,7 @@ function gastos(vid) {
 }
 function situacao(vid) {
   const ms = lerDB().manutencoes.filter(m => m.veiculo_id === vid);
-  if (!ms.length) return { tipo: 'ok', texto: '✓ Em dia' };
+  if (!ms.length) return { tipo: 'ok', texto: 'Em dia' };
   const hoje = new Date(); const lim30 = new Date(); lim30.setDate(hoje.getDate() + 30);
   let cr = 0, av = 0;
   for (const m of ms) {
@@ -46,15 +49,21 @@ function situacao(vid) {
       else if (d <= lim30) av++;
     }
   }
-  if (cr > 0) return { tipo: 'critico', texto: '⚠ Revisão atrasada' };
-  if (av > 0) return { tipo: 'aviso', texto: '⏰ Revisão próxima' };
-  return { tipo: 'ok', texto: '✓ Em dia' };
+  if (cr > 0) return { tipo: 'critico', texto: 'Revisão atrasada' };
+  if (av > 0) return { tipo: 'aviso', texto: 'Revisão próxima' };
+  return { tipo: 'ok', texto: 'Em dia' };
 }
 
 // ─── HTML HEAD + TOPNAV ────────────────────────────────────────────────────────
-const HEAD = (title) => `<!DOCTYPE html><html lang="pt-BR">
+const FAVICON = `<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23E8601C'/%3E%3Cpath d='M6 20a3 3 0 106 0 3 3 0 00-6 0zm14 0a3 3 0 106 0 3 3 0 00-6 0zM4 20h2m18 0h2M6.5 17l2-7h15l2 7' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">`;
+const HEAD = (title, desc = 'Controle sua garagem, histórico de revisões e manutenções em um só lugar.') => `<!DOCTYPE html><html lang="pt-BR">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Pit Stop — ${title}</title>
+<meta name="description" content="${desc}">
+<meta property="og:title" content="Pit Stop — ${title}">
+<meta property="og:description" content="${desc}">
+<meta property="og:type" content="website">
+${FAVICON}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="/style.css?v=4">
 </head>`;
@@ -108,22 +117,47 @@ function pg(title, user, corpo, extra = '', activePath = '') {
 ${topnav(user, activePath)}
 <main class="main">${corpo}</main>
 <div id="toasts"></div>
+<div class="confirm-overlay" id="confirmModal" style="display:none" onclick="if(event.target===this)_confirmCancel()">
+  <div class="confirm-dialog">
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" onclick="_confirmCancel()">Cancelar</button>
+      <button class="btn btn-danger" id="confirmOkBtn">Confirmar</button>
+    </div>
+  </div>
+</div>
 <script src="/main.js?v=4"></script>${extra}
 </body></html>`;
 }
 
 // ─── API ───────────────────────────────────────────────────────────────────────
-app.post('/api/login', (q, r) => {
+app.post('/api/login', async (q, r) => {
   const { usuario, senha } = q.body;
+  if (!usuario || !senha) return r.json({ ok: false });
   const db = lerDB();
-  const u = db.usuarios?.find(x => x.usuario === usuario && x.senha === senha)
-    || (usuario === 'aluno' && senha === 'senha123' ? { usuario: 'aluno' } : null);
+  if (!db.usuarios) db.usuarios = [];
+  const u = db.usuarios.find(x => x.usuario === usuario);
   if (!u) return r.json({ ok: false });
+
+  const isHash = u.senha.startsWith('$2');
+  let valid = false;
+  if (isHash) {
+    valid = await bcrypt.compare(senha, u.senha);
+  } else {
+    // migração: senha ainda em plain text
+    valid = u.senha === senha;
+    if (valid) {
+      u.senha = await bcrypt.hash(senha, SALT_ROUNDS);
+      salvarDB(db);
+    }
+  }
+
+  if (!valid) return r.json({ ok: false });
   q.session.user = u.usuario;
   r.json({ ok: true });
 });
 
-app.post('/api/cadastro', (q, r) => {
+app.post('/api/cadastro', async (q, r) => {
   const { usuario, senha, senha2, nome } = q.body;
   if (!usuario || !senha) return r.json({ ok: false, msg: 'Preencha todos os campos.' });
   if (senha !== senha2) return r.json({ ok: false, msg: 'As senhas não conferem.' });
@@ -134,7 +168,8 @@ app.post('/api/cadastro', (q, r) => {
   if (!db.usuarios) db.usuarios = [];
   if (usuario === 'aluno' || db.usuarios.find(x => x.usuario === usuario))
     return r.json({ ok: false, msg: 'Este usuário já está em uso. Escolha outro.' });
-  db.usuarios.push({ usuario, senha, nome: nome || usuario });
+  const hash = await bcrypt.hash(senha, SALT_ROUNDS);
+  db.usuarios.push({ usuario, senha: hash, nome: nome || usuario });
   salvarDB(db);
   q.session.user = usuario;
   r.json({ ok: true });
@@ -163,17 +198,19 @@ app.put('/api/perfil', logado, (q, r) => {
   r.json({ ok: true });
 });
 
-app.put('/api/perfil/senha', logado, (q, r) => {
+app.put('/api/perfil/senha', logado, async (q, r) => {
   const db = lerDB();
   if (!db.usuarios) db.usuarios = [];
   let u = db.usuarios.find(x => x.usuario === q.session.user);
-  if (!u) { u = { usuario: q.session.user, senha: 'senha123' }; db.usuarios.push(u); }
+  if (!u) { u = { usuario: q.session.user, senha: '' }; db.usuarios.push(u); }
   const { senha_atual, senha_nova } = q.body;
-  // usuario demo "aluno" aceita senha123 mesmo que não esteja no array
-  const senhaOk = u.senha === senha_atual || (q.session.user === 'aluno' && senha_atual === 'senha123');
+  const isHash = u.senha.startsWith('$2');
+  const senhaOk = isHash
+    ? await bcrypt.compare(senha_atual, u.senha)
+    : u.senha === senha_atual;
   if (!senhaOk) return r.json({ ok: false, msg: 'Senha atual incorreta.' });
   if (!senha_nova || senha_nova.length < 6) return r.json({ ok: false, msg: 'A nova senha deve ter pelo menos 6 caracteres.' });
-  u.senha = senha_nova;
+  u.senha = await bcrypt.hash(senha_nova, SALT_ROUNDS);
   salvarDB(db);
   r.json({ ok: true });
 });
@@ -229,7 +266,7 @@ app.get('/perfil', logado, (q, r) => {
 
       <!-- DADOS PESSOAIS -->
       <div class="form-card an an-d3">
-        <div class="perfil-section-title">👤 Dados Pessoais</div>
+        <div class="perfil-section-title">Dados Pessoais</div>
         <div class="g2" style="margin-top:20px">
           <div class="form-group">
             <label class="form-label">Nome completo</label>
@@ -253,34 +290,34 @@ app.get('/perfil', logado, (q, r) => {
           </div>
         </div>
         <div style="margin-top:24px;display:flex;gap:10px">
-          <button class="btn btn-primary" style="flex:1" onclick="salvarPerfil()">✅ Salvar dados</button>
+          <button class="btn btn-primary" style="flex:1" onclick="salvarPerfil()">Salvar dados</button>
         </div>
         <div class="perfil-feedback" id="pf-msg"></div>
       </div>
 
       <!-- TROCAR SENHA -->
       <div class="form-card an an-d4" style="margin-top:20px">
-        <div class="perfil-section-title">🔒 Alterar Senha</div>
+        <div class="perfil-section-title">Alterar Senha</div>
         <div class="g2" style="margin-top:20px">
           <div class="form-group" style="grid-column:1/-1">
             <label class="form-label">Senha atual</label>
             <div class="input-pw-wrap">
               <input class="form-input" id="pw-atual" type="password" placeholder="Digite sua senha atual" autocomplete="current-password">
-              <button type="button" class="btn-eye" onclick="togglePw('pw-atual',this)">👁</button>
+              <button type="button" class="btn-eye" onclick="togglePw('pw-atual',this)" aria-label="Mostrar senha"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg></button>
             </div>
           </div>
           <div class="form-group">
             <label class="form-label">Nova senha</label>
             <div class="input-pw-wrap">
               <input class="form-input" id="pw-nova" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
-              <button type="button" class="btn-eye" onclick="togglePw('pw-nova',this)">👁</button>
+              <button type="button" class="btn-eye" onclick="togglePw('pw-nova',this)" aria-label="Mostrar senha"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg></button>
             </div>
           </div>
           <div class="form-group">
             <label class="form-label">Confirmar nova senha</label>
             <div class="input-pw-wrap">
               <input class="form-input" id="pw-conf" type="password" placeholder="Repita a nova senha" autocomplete="new-password">
-              <button type="button" class="btn-eye" onclick="togglePw('pw-conf',this)">👁</button>
+              <button type="button" class="btn-eye" onclick="togglePw('pw-conf',this)" aria-label="Mostrar senha"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg></button>
             </div>
           </div>
         </div>
@@ -289,16 +326,16 @@ app.get('/perfil', logado, (q, r) => {
           <div class="pw-strength-label" id="pw-strength-label"></div>
         </div>
         <div style="margin-top:20px;display:flex;gap:10px">
-          <button class="btn btn-primary" style="flex:1" onclick="trocarSenha()">🔒 Alterar senha</button>
+          <button class="btn btn-primary" style="flex:1" onclick="trocarSenha()">Alterar senha</button>
         </div>
         <div class="perfil-feedback" id="pw-msg"></div>
       </div>
 
       <!-- ZONA DE PERIGO -->
       <div class="form-card an an-d5" style="margin-top:20px;border-color:rgba(229,48,48,.25)">
-        <div class="perfil-section-title" style="color:#E53030">⚠️ Zona de Perigo</div>
+        <div class="perfil-section-title" style="color:#E53030">Zona de Perigo</div>
         <p style="font-size:.88rem;color:var(--gray-400);margin:14px 0 20px;line-height:1.7">Sair da plataforma encerrará sua sessão atual. Todos os seus dados permanecem salvos.</p>
-        <a href="/logout" class="btn btn-danger" style="display:inline-flex;gap:8px;align-items:center">🚪 Sair da conta</a>
+        <a href="/logout" class="btn btn-danger" style="display:inline-flex;gap:8px;align-items:center">Sair da conta</a>
       </div>
 
     </div>
@@ -328,7 +365,7 @@ document.getElementById('pw-nova').addEventListener('input', function(){
 function togglePw(id, btn){
   var inp=document.getElementById(id);
   inp.type=inp.type==='password'?'text':'password';
-  btn.textContent=inp.type==='password'?'👁':'🙈';
+  btn.style.opacity=inp.type==='text'?'1':'.6';
 }
 
 // ── Salvar dados pessoais
@@ -338,7 +375,7 @@ async function salvarPerfil(){
   var res=await fetch('/api/perfil',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
   var j=await res.json();
   if(j.ok){
-    toast('Perfil atualizado com sucesso! ✅');
+    toast('Perfil atualizado');
     msg.className='perfil-feedback ok'; msg.textContent='✓ Dados salvos!';
     // Atualiza avatar ao vivo
     var n=d.nome||'${q.session.user}';
@@ -362,7 +399,7 @@ async function trocarSenha(){
   var res=await fetch('/api/perfil/senha',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({senha_atual:atual,senha_nova:nova})});
   var j=await res.json();
   if(j.ok){
-    toast('Senha alterada com sucesso! 🔒');
+    toast('Senha alterada com sucesso');
     msg.className='perfil-feedback ok'; msg.textContent='✓ Senha alterada!';
     ['pw-atual','pw-nova','pw-conf'].forEach(function(id){document.getElementById(id).value='';});
     document.getElementById('pw-strength-fill').style.width='0';
@@ -455,7 +492,11 @@ app.get('/', (q, r) => {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="Pit Stop — Plataforma digital de gestão automotiva. Controle sua garagem, histórico de revisões e manutenções em um só lugar.">
+<meta property="og:title" content="Pit Stop — Gestão Automotiva Inteligente">
+<meta property="og:description" content="Controle sua garagem, histórico de revisões e manutenções em um só lugar.">
+<meta property="og:type" content="website">
 <title>Pit Stop — Gestão Automotiva Inteligente</title>
+${FAVICON}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="/style.css?v=4">
 <style>
@@ -508,7 +549,7 @@ app.get('/', (q, r) => {
 .lp-feature-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#E8601C,#FF7A3A);opacity:0;transition:.3s;}
 .lp-feature-card:hover{border-color:rgba(232,96,28,.3);background:rgba(232,96,28,.04);transform:translateY(-3px);}
 .lp-feature-card:hover::before{opacity:1;}
-.lp-feature-icon{font-size:2rem;margin-bottom:18px;}
+.lp-feature-icon{margin-bottom:18px;display:flex;align-items:center;}
 .lp-feature-title{font-size:1.1rem;font-weight:800;color:#fff;margin-bottom:10px;}
 .lp-feature-desc{font-size:.88rem;color:rgba(255,255,255,.5);line-height:1.7;}
 .lp-purpose{background:linear-gradient(135deg,#0a0a0a 0%,#1a0f0a 100%);padding:96px 24px;position:relative;overflow:hidden;}
@@ -581,7 +622,7 @@ app.get('/', (q, r) => {
   <div class="lp-hero-bg"></div>
   <div class="lp-hero-glow"></div>
   <div class="lp-hero-content">
-    <div class="lp-hero-badge">🏁 Gestão Automotiva · 2026</div>
+    <div class="lp-hero-badge">Gestão Automotiva · 2026</div>
     <h1 class="lp-hero-title">Sua garagem,<br><span>digital e inteligente.</span></h1>
     <p class="lp-hero-sub">Controle o histórico completo de revisões, manutenções e gastos de todos os seus veículos em um único lugar — com laudos digitais e alertas automáticos.</p>
     <div class="lp-hero-cta">
@@ -591,7 +632,7 @@ app.get('/', (q, r) => {
     <div class="lp-hero-stats">
       <div class="lp-stat"><div class="lp-stat-num">27+</div><div class="lp-stat-label">Modelos catalogados</div></div>
       <div class="lp-stat"><div class="lp-stat-num">100%</div><div class="lp-stat-label">Digital e gratuito</div></div>
-      <div class="lp-stat"><div class="lp-stat-num">5 ⭐</div><div class="lp-stat-label">Avaliação dos usuários</div></div>
+      <div class="lp-stat"><div class="lp-stat-num">5.0</div><div class="lp-stat-label">Avaliação dos usuários</div></div>
     </div>
   </div>
 </section>
@@ -625,12 +666,12 @@ app.get('/', (q, r) => {
       <p class="lp-section-sub" style="color:rgba(255,255,255,.45);margin:0 auto">Uma plataforma completa para quem leva a sério o cuidado com seus veículos.</p>
     </div>
     <div class="lp-features-grid">
-      <div class="lp-feature-card fade-up"><div class="lp-feature-icon">🏎️</div><div class="lp-feature-title">Garagem Digital</div><div class="lp-feature-desc">Cadastre todos os seus veículos com dados completos: motor, potência, câmbio, quilometragem e foto. Tudo num só lugar.</div></div>
-      <div class="lp-feature-card fade-up"><div class="lp-feature-icon">📋</div><div class="lp-feature-title">Laudos de Revisão</div><div class="lp-feature-desc">Registre revisões com checklist de 20 itens. Cada revisão gera um documento digital numerado (REV-AAAA-NNN) para imprimir ou compartilhar.</div></div>
-      <div class="lp-feature-card fade-up"><div class="lp-feature-icon">🔧</div><div class="lp-feature-title">Histórico de Manutenções</div><div class="lp-feature-desc">Registre troca de óleo, freios, pneus e qualquer serviço. Acompanhe o gasto total e a próxima manutenção.</div></div>
-      <div class="lp-feature-card fade-up"><div class="lp-feature-icon">⚠️</div><div class="lp-feature-title">Alertas Inteligentes</div><div class="lp-feature-desc">Receba alertas automáticos quando uma revisão estiver atrasada ou próxima do prazo. Nunca mais esqueça a manutenção.</div></div>
-      <div class="lp-feature-card fade-up"><div class="lp-feature-icon">📊</div><div class="lp-feature-title">Dashboard com Gráficos</div><div class="lp-feature-desc">Visualize seus gastos por mês em gráficos interativos. Saiba exatamente quanto investiu em cada veículo.</div></div>
-      <div class="lp-feature-card fade-up"><div class="lp-feature-icon">🇧🇷</div><div class="lp-feature-title">Catálogo Brasileiro</div><div class="lp-feature-desc">Explore 27 modelos dos carros mais populares do Brasil com specs completas: motor, consumo, preço e mais.</div></div>
+      <div class="lp-feature-card fade-up"><div class="lp-feature-icon"><svg width="28" height="28" fill="none" stroke="#E8601C" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0zM1 1h4l2.68 13.39a2 2 0 001.98 1.61h9.72a2 2 0 001.98-1.68L23 6H6"/></svg></div><div class="lp-feature-title">Garagem Digital</div><div class="lp-feature-desc">Cadastre todos os seus veículos com dados completos: motor, potência, câmbio, quilometragem e foto. Tudo num só lugar.</div></div>
+      <div class="lp-feature-card fade-up"><div class="lp-feature-icon"><svg width="28" height="28" fill="none" stroke="#E8601C" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div><div class="lp-feature-title">Laudos de Revisão</div><div class="lp-feature-desc">Registre revisões com checklist de 20 itens. Cada revisão gera um documento digital numerado (REV-AAAA-NNN) para imprimir ou compartilhar.</div></div>
+      <div class="lp-feature-card fade-up"><div class="lp-feature-icon"><svg width="28" height="28" fill="none" stroke="#E8601C" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div><div class="lp-feature-title">Histórico de Manutenções</div><div class="lp-feature-desc">Registre troca de óleo, freios, pneus e qualquer serviço. Acompanhe o gasto total e a próxima manutenção.</div></div>
+      <div class="lp-feature-card fade-up"><div class="lp-feature-icon"><svg width="28" height="28" fill="none" stroke="#E8601C" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div><div class="lp-feature-title">Alertas Inteligentes</div><div class="lp-feature-desc">Receba alertas automáticos quando uma revisão estiver atrasada ou próxima do prazo. Nunca mais esqueça a manutenção.</div></div>
+      <div class="lp-feature-card fade-up"><div class="lp-feature-icon"><svg width="28" height="28" fill="none" stroke="#E8601C" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-width="1.5"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9h18M9 21V9"/></svg></div><div class="lp-feature-title">Dashboard com Gráficos</div><div class="lp-feature-desc">Visualize seus gastos por mês em gráficos interativos. Saiba exatamente quanto investiu em cada veículo.</div></div>
+      <div class="lp-feature-card fade-up"><div class="lp-feature-icon"><svg width="28" height="28" fill="none" stroke="#E8601C" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1.5"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></div><div class="lp-feature-title">Catálogo Brasileiro</div><div class="lp-feature-desc">Explore 27 modelos dos carros mais populares do Brasil com specs completas: motor, consumo, preço e mais.</div></div>
     </div>
   </div>
 </section>
@@ -822,7 +863,7 @@ app.get('/dashboard', logado, (q, r) => {
   const alertHtml = alertas.map(v => {
     const s = situacao(v.id);
     return `<div class="alert${s.tipo === 'critico' ? ' critical' : ''}">
-      <span style="font-size:1.4rem">${s.tipo === 'critico' ? '🚨' : '⏰'}</span>
+      <span style="width:10px;height:10px;border-radius:50%;background:${s.tipo === 'critico' ? 'var(--cr)' : 'var(--or)'};display:inline-block;flex-shrink:0"></span>
       <div style="flex:1"><b>${v.modelo}</b> — ${s.texto}<br>
         <span style="font-size:.78rem;color:var(--gray-600)">${v.placa ? 'Placa: ' + v.placa : ''}</span></div>
       <a href="/veiculo/${v.id}" class="btn btn-sm btn-outline">Ver detalhes</a>
@@ -861,10 +902,10 @@ app.get('/dashboard', logado, (q, r) => {
     </div>
   </div>
   <div class="g4 an an-d2">
-    <div class="stat-card"><div class="stat-icon">🚗</div><div class="stat-label">Veículos</div><div class="stat-value orange">${vs.length}</div><div class="stat-detail">na garagem</div></div>
-    <div class="stat-card"><div class="stat-icon">🔧</div><div class="stat-label">Manutenções</div><div class="stat-value blue">${ms.length}</div><div class="stat-detail">registradas</div></div>
-    <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-label">Total investido</div><div class="stat-value orange">R$ ${brl(tot)}</div><div class="stat-detail">em serviços</div></div>
-    <div class="stat-card"><div class="stat-icon">⚠️</div><div class="stat-label">Alertas</div><div class="stat-value ${alertas.length ? 'red' : 'green'}">${alertas.length}</div><div class="stat-detail">pendentes</div></div>
+    <div class="stat-card"><div class="stat-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0zM1 1h4l2.68 13.39a2 2 0 001.98 1.61h9.72a2 2 0 001.98-1.68L23 6H6"/></svg></div><div class="stat-label">Veículos</div><div class="stat-value orange">${vs.length}</div><div class="stat-detail">na garagem</div></div>
+    <div class="stat-card"><div class="stat-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div><div class="stat-label">Manutenções</div><div class="stat-value blue">${ms.length}</div><div class="stat-detail">registradas</div></div>
+    <div class="stat-card"><div class="stat-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1.5"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v2m0 8v2M9.5 9a2.5 2.5 0 015 0c0 1.5-1 2.5-2.5 3v1m0 2h.01"/></svg></div><div class="stat-label">Total investido</div><div class="stat-value orange">R$ ${brl(tot)}</div><div class="stat-detail">em serviços</div></div>
+    <div class="stat-card"><div class="stat-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4m0 4h.01"/></svg></div><div class="stat-label">Alertas</div><div class="stat-value ${alertas.length ? 'red' : 'green'}">${alertas.length}</div><div class="stat-detail">pendentes</div></div>
   </div>
   ${alertas.length ? `<div class="section-label an an-d3">Alertas de manutenção</div><div style="margin-bottom:26px" class="an an-d4">${alertHtml}</div>` : ''}
   <div class="gchart an an-d4">
@@ -903,7 +944,7 @@ app.get('/garagem', logado, (q, r) => {
         <img src="${v.img}" alt="${v.modelo}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=900&auto=format'">
         <div class="car-photo-overlay"></div>
         <span class="tag-brand">${v.marca}</span>
-        ${inativo ? '<span class="tag-status" style="background:rgba(100,100,100,.85);color:#fff;position:absolute;top:44px;right:10px">⏸ Inativo</span>' : `<span class="tag-status ${sitCls}">${s.texto}</span>`}
+        ${inativo ? '<span class="tag-status" style="background:rgba(100,100,100,.85);color:#fff;position:absolute;top:44px;right:10px">Inativo</span>' : `<span class="tag-status ${sitCls}">${s.texto}</span>`}
       </div>
       <div class="car-body">
         <div class="car-name">${v.modelo}</div>
@@ -916,8 +957,8 @@ app.get('/garagem', logado, (q, r) => {
         </div>
         <div class="car-actions" onclick="event.stopPropagation()">
           <a href="/veiculo/${v.id}" class="btn btn-primary" style="flex:1">Ver detalhes</a>
-          <a href="/editar-veiculo/${v.id}" class="btn btn-ghost btn-sm" title="Editar veículo">✏️</a>
-          <button class="btn btn-ghost btn-sm" title="${inativo ? 'Reativar' : 'Inativar'} veículo" onclick="toggleStatus(event,${v.id},this)">${inativo ? '▶️' : '⏸'}</button>
+          <a href="/editar-veiculo/${v.id}" class="btn btn-ghost btn-sm" title="Editar veículo"><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></a>
+          <button class="btn btn-ghost btn-sm" title="${inativo ? 'Reativar' : 'Inativar'} veículo" onclick="toggleStatus(event,${v.id},this)">${inativo ? 'Ativar' : 'Pausar'}</button>
         </div>
       </div>
     </div>`;
@@ -926,7 +967,7 @@ app.get('/garagem', logado, (q, r) => {
   const cardsAtivos = vsAtivos.map((v, i) => cardVeiculo(v, i)).join('');
   const cardsInativos = vsInativos.map((v, i) => cardVeiculo(v, i)).join('');
   const secaoInativos = vsInativos.length ? `
-    <div class="section-label" style="margin-top:32px;margin-bottom:16px">⏸ Veículos Inativos (${vsInativos.length})</div>
+    <div class="section-label" style="margin-top:32px;margin-bottom:16px">Veículos Inativos (${vsInativos.length})</div>
     <div class="cars-grid">${cardsInativos}</div>` : '';
 
   r.send(pg('Minha Garagem', q.session.user, `
@@ -934,17 +975,18 @@ app.get('/garagem', logado, (q, r) => {
     <div><div class="page-title">Minha <span>Garagem</span></div><div class="page-subtitle">${vsAtivos.length} ativo(s) · ${vsInativos.length} inativo(s)</div></div>
     <a href="/cadastro" class="btn btn-primary">+ Adicionar carro</a>
   </div>
-  <div class="cars-grid">${cardsAtivos || '<div class="no-items" style="grid-column:1/-1">Nenhum carro ainda. <a href="/cadastro">Adicionar meu primeiro carro →</a></div>'}</div>
+  <div class="cars-grid">${cardsAtivos || `<div class="empty-state"><div class="empty-state-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0zM1 1h4l2.68 13.39a2 2 0 001.98 1.61h9.72a2 2 0 001.98-1.68L23 6H6"/></svg></div><div class="empty-state-title">Garagem vazia</div><div class="empty-state-sub">Você ainda não cadastrou nenhum veículo. Adicione seu primeiro carro para começar.</div><a href="/cadastro" class="btn btn-primary">+ Adicionar meu primeiro carro</a></div>`}</div>
   ${secaoInativos}
   `, `<script>
 function toggleMobile(){document.getElementById('mobileMenu').classList.toggle('open');}
 async function toggleStatus(e,id,btn){
   e.stopPropagation();
-  if(!confirm('Deseja alterar o status deste veículo?')) return;
-  var res = await fetch('/api/veiculos/'+id+'/status',{method:'PATCH'});
-  var j = await res.json();
-  if(j.ok){ toast(j.ativo===false ? 'Veículo inativado ⏸' : 'Veículo reativado ▶️','av'); setTimeout(function(){location.reload();},900); }
-  else toast('Erro ao alterar status.','erro');
+  confirmDialog('Deseja alterar o status deste veículo?', async function(){
+    var res = await fetch('/api/veiculos/'+id+'/status',{method:'PATCH'});
+    var j = await res.json();
+    if(j.ok){ toast(j.ativo===false ? 'Veículo inativado' : 'Veículo reativado','av'); setTimeout(function(){location.reload();},900); }
+    else toast('Erro ao alterar status.','erro');
+  });
 }
 </script>`, '/garagem'));
 });
@@ -992,21 +1034,21 @@ app.get('/veiculo/:id', logado, (q, r) => {
           <div><span class="rev-mini-val" style="color:var(--or)">R$ ${brl(rv.custo)}</span><span class="rev-mini-label">Custo</span></div>
         </div>
         <div class="rev-card-actions">
-          <a href="/revisao/${rv.id}/documento" class="btn btn-outline btn-sm">📄 Ver Laudo</a>
+          <a href="/revisao/${rv.id}/documento" class="btn btn-outline btn-sm">Ver Laudo</a>
           <button class="btn btn-danger btn-sm" onclick="removerRev(${rv.id})">Remover</button>
         </div>
       </div>
     </div>`;
-  }).join('') : `<div class="no-items" style="padding:32px;text-align:center">Nenhuma revisão registrada para este veículo.</div>`;
+  }).join('') : `<div class="empty-state"><div class="empty-state-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div><div class="empty-state-title">Sem revisões</div><div class="empty-state-sub">Nenhuma revisão registrada para este veículo ainda.</div><a href="/revisao/nova" class="btn btn-outline">+ Registrar revisão</a></div>`;
 
   const inativo = v.ativo === false;
   r.send(pg(v.modelo, q.session.user, `
-  ${inativo ? `<div class="alert" style="background:rgba(100,100,100,.08);border-color:rgba(100,100,100,.25);margin-bottom:0">⏸ Este veículo está <b>inativo</b>. <a href="/editar-veiculo/${v.id}" style="color:var(--or)">Reativar →</a></div>` : ''}
+  ${inativo ? `<div class="alert" style="background:rgba(100,100,100,.08);border-color:rgba(100,100,100,.25);margin-bottom:0">Este veículo está <b>inativo</b>. <a href="/editar-veiculo/${v.id}" style="color:var(--or)">Reativar →</a></div>` : ''}
   <div class="page-header an an-d1">
     <div><div class="page-title"><span>${v.modelo}</span></div><div class="page-subtitle">${v.marca} · ${v.ano}${v.cor ? ' · ' + v.cor : ''}</div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <a href="/manutencao/${v.id}" class="btn btn-primary">🔧 Registrar manutenção</a>
-      <a href="/editar-veiculo/${v.id}" class="btn btn-ghost">✏️ Editar</a>
+      <a href="/manutencao/${v.id}" class="btn btn-primary">Registrar manutenção</a>
+      <a href="/editar-veiculo/${v.id}" class="btn btn-ghost">Editar</a>
       <a href="/garagem" class="btn btn-ghost">← Voltar</a>
     </div>
   </div>
@@ -1027,8 +1069,8 @@ app.get('/veiculo/:id', logado, (q, r) => {
     <div class="chart-card"><div class="section-label">Gastos por mês</div><canvas id="gv" height="130"></canvas></div>
   </div>
   <div class="veiculo-tabs an an-d5">
-    <button class="vtab-btn vtab-active" onclick="showTab('manut')">🔧 Manutenções (${ms.length})</button>
-    <button class="vtab-btn" onclick="showTab('revisoes')">📋 Revisões (${vRevs.length})</button>
+    <button class="vtab-btn vtab-active" onclick="showTab('manut')">Manutenções (${ms.length})</button>
+    <button class="vtab-btn" onclick="showTab('revisoes')">Revisões (${vRevs.length})</button>
   </div>
   <div id="tab-manut">
     <div class="table-wrap"><table><thead><tr><th>Serviço</th><th>Descrição</th><th>Oficina</th><th>KM</th><th>Valor</th><th>Data</th><th>Próxima</th><th></th></tr></thead>
@@ -1043,8 +1085,8 @@ app.get('/veiculo/:id', logado, (q, r) => {
 <script>
 function toggleMobile(){document.getElementById('mobileMenu').classList.toggle('open');}
 var gv=document.getElementById('gv');if(gv)new Chart(gv,{type:'line',data:{labels:${JSON.stringify(meses)},datasets:[{label:'R$',data:${JSON.stringify(meses.map(m => mmap[m]))},borderColor:'#E8601C',backgroundColor:'rgba(232,96,28,.1)',tension:.4,fill:true,pointBackgroundColor:'#E8601C',pointRadius:5}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#9a9a9a'}},y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#9a9a9a',callback:function(v){return'R$'+v;}}}}}});
-async function remover(id){if(!confirm('Remover esta manutenção?'))return;await fetch('/api/manut/'+id,{method:'DELETE'});toast('Manutenção removida','av');setTimeout(function(){location.reload();},900);}
-async function removerRev(id){if(!confirm('Remover esta revisão?'))return;await fetch('/api/revisoes/'+id,{method:'DELETE'});toast('Revisão removida','av');setTimeout(function(){location.reload();},900);}
+function remover(id){confirmDialog('Remover esta manutenção?',async function(){await fetch('/api/manut/'+id,{method:'DELETE'});toast('Manutenção removida','av');setTimeout(function(){location.reload();},900);});}
+function removerRev(id){confirmDialog('Remover esta revisão?',async function(){await fetch('/api/revisoes/'+id,{method:'DELETE'});toast('Revisão removida','av');setTimeout(function(){location.reload();},900);});}
 function showTab(t){
   document.getElementById('tab-manut').style.display=t==='manut'?'block':'none';
   document.getElementById('tab-revisoes').style.display=t==='revisoes'?'block':'none';
@@ -1062,7 +1104,7 @@ app.get('/cadastro', logado, (q, r) => {
   </div>
   <div class="form-card an an-d2">
     <div class="form-group">
-      <label class="form-label" style="color:var(--or)">🔍 Passo 1 — Busque o modelo</label>
+      <label class="form-label" style="color:var(--or)">Passo 1 — Busque o modelo</label>
       <div class="search-input-wrap">
         <svg class="search-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
         <input class="search-input" id="bc" placeholder="Digite: Onix, Polo, HB20, Tracker...">
@@ -1071,11 +1113,11 @@ app.get('/cadastro', logado, (q, r) => {
       <div class="search-results" id="bg" style="display:none"></div>
     </div>
     <div class="specs-preview" id="sb2">
-      <div class="specs-preview-title">✅ Selecionado <button onclick="limpar()" class="btn btn-ghost btn-sm">✕ Limpar</button></div>
+      <div class="specs-preview-title">Selecionado <button onclick="limpar()" class="btn btn-ghost btn-sm">Limpar</button></div>
       <div class="specs-grid3" id="sg"></div>
     </div>
     <div class="divider"></div>
-    <p class="form-label">📝 Passo 2 — Seus dados (Auto-fill ativado via Busca)</p>
+    <p class="form-label">Passo 2 — Seus dados</p>
     <div class="g2">
       <div class="form-group"><label class="form-label">Quilometragem atual *</label><input class="form-input" id="fk" type="number" placeholder="Ex: 25000"></div>
       <div class="form-group"><label class="form-label">Cor</label><input class="form-input" id="fc" placeholder="Ex: Branco Pérola"></div>
@@ -1083,7 +1125,7 @@ app.get('/cadastro', logado, (q, r) => {
     </div>
     <div style="display:flex;gap:12px;margin-top:24px">
       <a href="/garagem" class="btn btn-ghost" style="flex:1">Cancelar</a>
-      <button class="btn btn-primary" style="flex:2" onclick="salvar()">✅ Salvar na garagem</button>
+      <button class="btn btn-primary" style="flex:2" onclick="salvar()">Salvar na garagem</button>
     </div>
   </div>`,
     `<script>
@@ -1108,7 +1150,7 @@ function escolher(i){
   var info=[['Motor',SEL.motor],['Potência',SEL.potencia],['Torque',SEL.torque],['Câmbio',SEL.cambio],['Tração',SEL.tracao],['Combustível',SEL.combustivel],['Consumo cidade',SEL.consumo_cidade],['Consumo estrada',SEL.consumo_estrada],['Porta-malas',SEL.porta_malas],['Preço base',SEL.preco_base]];
   var sg='';for(var j=0;j<info.length;j++){if(info[j][1])sg+='<div><div class="sp-r">'+info[j][0]+'</div><div class="sp-v">'+info[j][1]+'</div></div>';}
   document.getElementById('sg').innerHTML=sg;document.getElementById('sb2').classList.add('visible');
-  toast(SEL.marca+' '+SEL.modelo+' selecionado! ✅');
+  toast(SEL.marca+' '+SEL.modelo+' selecionado');
 }
 function limpar(){
   bc.value='';bg.style.display='none';bg.innerHTML='';document.getElementById('sb2').classList.remove('visible');
@@ -1121,7 +1163,7 @@ async function salvar(){
   if(!d.km){toast('Preencha a Quilometragem para continuar!','erro');return;}
   var res=await fetch('/api/veiculos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
   var j=await res.json();
-  if(j.ok){toast('Carro adicionado! 🚗');setTimeout(function(){window.location.href='/garagem';},1000);}
+  if(j.ok){toast('Carro adicionado à garagem');setTimeout(function(){window.location.href='/garagem';},1000);}
   else toast('Erro ao salvar.','erro');
 }
 </script>`, '/cadastro'));
@@ -1143,12 +1185,12 @@ app.get('/editar-veiculo/:id', logado, (q, r) => {
 
     <!-- INFO FIXA -->
     <div class="alert" style="margin-bottom:22px;background:rgba(232,96,28,.06);border-color:rgba(232,96,28,.2)">
-      🚗 <b>${v.marca} ${v.modelo} ${v.ano}</b> · Motor: ${v.motor || '—'} · ${v.potencia || '—'}
+      <b>${v.marca} ${v.modelo} ${v.ano}</b> · Motor: ${v.motor || '—'} · ${v.potencia || '—'}
       <br><small style="color:var(--gray-400);margin-top:4px;display:block">Os dados técnicos (motor, câmbio, etc.) são fixos do catálogo. Você pode editar os seus dados operacionais abaixo.</small>
     </div>
 
     <!-- DADOS EDITÁVEIS -->
-    <div class="perfil-section-title">🔧 Dados Operacionais</div>
+    <div class="perfil-section-title">Dados Operacionais</div>
     <div class="g2" style="margin-top:20px">
       <div class="form-group">
         <label class="form-label">Quilometragem atual *</label>
@@ -1169,14 +1211,14 @@ app.get('/editar-veiculo/:id', logado, (q, r) => {
     </div>
     <div style="display:flex;gap:12px;margin-top:24px">
       <a href="/veiculo/${v.id}" class="btn btn-ghost" style="flex:1">Cancelar</a>
-      <button class="btn btn-primary" style="flex:2" onclick="salvarEdicao()">✅ Salvar alterações</button>
+      <button class="btn btn-primary" style="flex:2" onclick="salvarEdicao()">Salvar alterações</button>
     </div>
     <div class="perfil-feedback" id="ev-msg"></div>
   </div>
 
   <!-- ATIVAR / INATIVAR -->
   <div class="form-card an an-d3" style="margin-top:20px;border-color:${inativo ? 'rgba(76,175,80,.25)' : 'rgba(229,48,48,.2)'}">
-    <div class="perfil-section-title" style="color:${inativo ? '#4caf50' : '#E53030'}">${inativo ? '▶️ Reativar Veículo' : '⏸ Inativar Veículo'}</div>
+    <div class="perfil-section-title" style="color:${inativo ? '#4caf50' : '#E53030'}">${inativo ? 'Reativar Veículo' : 'Inativar Veículo'}</div>
     <p style="font-size:.88rem;color:var(--gray-400);margin:14px 0 20px;line-height:1.7">
       ${inativo
       ? 'Este veículo está <b>inativo</b> e não aparece nos alertas e contagens principais. Reative-o para voltar ao normal.'
@@ -1184,7 +1226,7 @@ app.get('/editar-veiculo/:id', logado, (q, r) => {
     }
     </p>
     <button class="btn ${inativo ? 'btn-primary' : 'btn-danger'}" onclick="alterarStatus()" id="btn-status">
-      ${inativo ? '▶️ Reativar veículo' : '⏸ Inativar veículo'}
+      ${inativo ? 'Reativar veículo' : 'Inativar veículo'}
     </button>
     <div class="perfil-feedback" id="st-msg"></div>
   </div>
@@ -1201,7 +1243,7 @@ async function salvarEdicao(){
   var res = await fetch('/api/veiculos/${v.id}',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({km,cor,placa,observacoes:obs})});
   var j = await res.json();
   if(j.ok){
-    toast('Veículo atualizado! ✅');
+    toast('Veículo atualizado');
     msg.className='perfil-feedback ok'; msg.textContent='✓ Dados salvos com sucesso!';
     setTimeout(function(){ msg.textContent=''; },3000);
   } else {
@@ -1209,18 +1251,19 @@ async function salvarEdicao(){
   }
 }
 
-async function alterarStatus(){
+function alterarStatus(){
   var confirmMsg = ${inativo ? "'Deseja reativar este veículo?'" : "'Deseja inativar este veículo? O histórico será preservado.'"};
-  if(!confirm(confirmMsg)) return;
-  var res = await fetch('/api/veiculos/${v.id}/status',{method:'PATCH'});
-  var j = await res.json();
-  if(j.ok){
-    toast(j.ativo===false ? 'Veículo inativado ⏸' : 'Veículo reativado ▶️', 'av');
-    setTimeout(function(){ window.location.href='/garagem'; }, 1000);
-  } else {
-    document.getElementById('st-msg').className='perfil-feedback err';
-    document.getElementById('st-msg').textContent='✗ Erro ao alterar status.';
-  }
+  confirmDialog(confirmMsg, async function(){
+    var res = await fetch('/api/veiculos/${v.id}/status',{method:'PATCH'});
+    var j = await res.json();
+    if(j.ok){
+      toast(j.ativo===false ? 'Veículo inativado' : 'Veículo reativado', 'av');
+      setTimeout(function(){ window.location.href='/garagem'; }, 1000);
+    } else {
+      document.getElementById('st-msg').className='perfil-feedback err';
+      document.getElementById('st-msg').textContent='✗ Erro ao alterar status.';
+    }
+  });
 }
 </script>`, '/garagem'));
 });
@@ -1237,7 +1280,7 @@ app.get('/manutencao/:id', logado, (q, r) => {
   </div>
   <div class="form-card an an-d2">
     <div class="alert" style="margin-bottom:22px">
-      📝 Registrando serviço para o <b>${v.modelo}</b>. Mantenha o histórico completo para alertas automáticos de revisão.
+      Registrando serviço para <b>${v.modelo}</b>. Mantenha o histórico completo para alertas automáticos de revisão.
     </div>
     <div class="g2">
       <div class="form-group"><label class="form-label">Tipo de serviço *</label><select class="form-input" id="tp">${tipos.map(t => '<option>' + t + '</option>').join('')}</select></div>
@@ -1251,7 +1294,7 @@ app.get('/manutencao/:id', logado, (q, r) => {
     <div class="form-group"><label class="form-label">Observações</label><textarea class="form-input" id="de" rows="3" placeholder="Anote qualquer detalhe do serviço..."></textarea></div>
     <div style="display:flex;gap:12px;margin-top:8px">
       <a href="/veiculo/${v.id}" class="btn btn-ghost" style="flex:1">Cancelar</a>
-      <button class="btn btn-primary" style="flex:2" onclick="salvar()">✅ Salvar manutenção</button>
+      <button class="btn btn-primary" style="flex:2" onclick="salvar()">Salvar manutenção</button>
     </div>
   </div>`,
     `<script>
@@ -1262,7 +1305,7 @@ async function salvar(){
   if(!d.data){toast('Informe a data do serviço!','erro');return;}
   var res=await fetch('/api/manut/${v.id}',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
   var j=await res.json();
-  if(j.ok){toast('Manutenção salva! 🔧');setTimeout(function(){window.location.href='/veiculo/${v.id}';},900);}
+  if(j.ok){toast('Manutenção registrada');setTimeout(function(){window.location.href='/veiculo/${v.id}';},900);}
   else toast('Erro ao salvar.','erro');
 }
 </script>`, '/garagem'));
@@ -1293,18 +1336,18 @@ const ITENS_CHECKLIST = [
 ];
 
 function statusRevIcon(s) {
-  if (s === 'aprovado') return '<span class="rev-check aprovado">✓ Aprovado</span>';
-  if (s === 'atencao') return '<span class="rev-check atencao">⚠ Atenção</span>';
-  return '<span class="rev-check nao_verificado">— Não verificado</span>';
+  if (s === 'aprovado') return '<span class="rev-check aprovado">Aprovado</span>';
+  if (s === 'atencao') return '<span class="rev-check atencao">Atenção</span>';
+  return '<span class="rev-check nao_verificado">Não verificado</span>';
 }
 
 function situacaoRev(rv) {
-  if (!rv.proxima_data) return { tipo: 'ok', texto: '✓ Em dia' };
+  if (!rv.proxima_data) return { tipo: 'ok', texto: 'Em dia' };
   const hoje = new Date(); const lim30 = new Date(); lim30.setDate(hoje.getDate() + 30);
   const d = new Date(rv.proxima_data);
-  if (d < hoje) return { tipo: 'critico', texto: '⚠ Revisão atrasada' };
-  if (d <= lim30) return { tipo: 'aviso', texto: '⏰ Revisão próxima' };
-  return { tipo: 'ok', texto: '✓ Em dia' };
+  if (d < hoje) return { tipo: 'critico', texto: 'Revisão atrasada' };
+  if (d <= lim30) return { tipo: 'aviso', texto: 'Revisão próxima' };
+  return { tipo: 'ok', texto: 'Em dia' };
 }
 
 app.get('/revisoes', logado, (q, r) => {
@@ -1353,14 +1396,14 @@ app.get('/revisoes', logado, (q, r) => {
             <div><span class="rev-mini-val" style="color:var(--or)">R$ ${brl(rv.custo)}</span><span class="rev-mini-label">Custo</span></div>
           </div>
           <div class="rev-card-actions">
-            <a href="/revisao/${rv.id}/documento" class="btn btn-outline btn-sm">📄 Ver Laudo</a>
+            <a href="/revisao/${rv.id}/documento" class="btn btn-outline btn-sm">Ver Laudo</a>
             <button class="btn btn-danger btn-sm" onclick="removerRev(${rv.id})">Remover</button>
           </div>
         </div>
-        ${rv.proxima_data ? `<div class="rev-proxima">📅 Próxima revisão: <b>${rv.proxima_data}</b>${rv.proxima_km ? ' · KM: <b>' + Number(rv.proxima_km).toLocaleString('pt-BR') + '</b>' : ''}</div>` : ''}
+        ${rv.proxima_data ? `<div class="rev-proxima">Próxima revisão: <b>${rv.proxima_data}</b>${rv.proxima_km ? ' · KM: <b>' + Number(rv.proxima_km).toLocaleString('pt-BR') + '</b>' : ''}</div>` : ''}
       </div>
     </div>`;
-  }).join('') : `<div class="no-items" style="padding:48px;text-align:center;border:1px solid var(--gray-200);border-radius:var(--r);background:var(--white)">Nenhuma revisão registrada ainda.<br><a href="/revisao/nova" class="btn btn-primary" style="margin-top:16px;display:inline-flex">+ Registrar primeira revisão</a></div>`;
+  }).join('') : `<div class="empty-state"><div class="empty-state-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div><div class="empty-state-title">Nenhuma revisão registrada</div><div class="empty-state-sub">Registre a primeira revisão digital de um dos seus veículos para acompanhar o histórico de manutenção.</div><a href="/revisao/nova" class="btn btn-primary">+ Registrar primeira revisão</a></div>`;
 
   r.send(pg('Revisões', q.session.user, `
   <div class="page-header an an-d1">
@@ -1368,20 +1411,21 @@ app.get('/revisoes', logado, (q, r) => {
     <a href="/revisao/nova" class="btn btn-primary">+ Nova Revisão</a>
   </div>
   <div class="g4 an an-d2">
-    <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-label">Total de Revisões</div><div class="stat-value blue">${revs.length}</div><div class="stat-detail">documentos emitidos</div></div>
-    <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-label">Em dia</div><div class="stat-value green">${revs.length - atrasadas - proximas}</div><div class="stat-detail">revisões ok</div></div>
-    <div class="stat-card"><div class="stat-icon">⚠️</div><div class="stat-label">Atrasadas</div><div class="stat-value ${atrasadas ? 'red' : 'green'}">${atrasadas}</div><div class="stat-detail">precisam de atenção</div></div>
-    <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-label">Total investido</div><div class="stat-value orange">R$ ${brl(totCusto)}</div><div class="stat-detail">em revisões</div></div>
+    <div class="stat-card"><div class="stat-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div><div class="stat-label">Total de Revisões</div><div class="stat-value blue">${revs.length}</div><div class="stat-detail">documentos emitidos</div></div>
+    <div class="stat-card"><div class="stat-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div class="stat-label">Em dia</div><div class="stat-value green">${revs.length - atrasadas - proximas}</div><div class="stat-detail">revisões ok</div></div>
+    <div class="stat-card"><div class="stat-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4m0 4h.01"/></svg></div><div class="stat-label">Atrasadas</div><div class="stat-value ${atrasadas ? 'red' : 'green'}">${atrasadas}</div><div class="stat-detail">precisam de atenção</div></div>
+    <div class="stat-card"><div class="stat-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1.5"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v2m0 8v2M9.5 9a2.5 2.5 0 015 0c0 1.5-1 2.5-2.5 3v1m0 2h.01"/></svg></div><div class="stat-label">Total investido</div><div class="stat-value orange">R$ ${brl(totCusto)}</div><div class="stat-detail">em revisões</div></div>
   </div>
   <div class="section-label an an-d3">Histórico de revisões</div>
   <div class="rev-timeline an an-d4">${timelineHtml}</div>`,
     `<script>
 function toggleMobile(){document.getElementById('mobileMenu').classList.toggle('open');}
-async function removerRev(id){
-  if(!confirm('Remover esta revisão?'))return;
-  await fetch('/api/revisoes/'+id,{method:'DELETE'});
-  toast('Revisão removida','av');
-  setTimeout(function(){location.reload();},900);
+function removerRev(id){
+  confirmDialog('Remover esta revisão?',async function(){
+    await fetch('/api/revisoes/'+id,{method:'DELETE'});
+    toast('Revisão removida','av');
+    setTimeout(function(){location.reload();},900);
+  });
 }
 </script>`, '/revisoes'));
 });
@@ -1393,11 +1437,11 @@ app.get('/revisao/nova', logado, (q, r) => {
   const tipos = ['Revisão de 10.000 km', 'Revisão de 20.000 km', 'Revisão de 30.000 km', 'Revisão de 40.000 km', 'Revisão de 60.000 km', 'Revisão de 80.000 km', 'Revisão de 100.000 km', 'Revisão Simples', 'Revisão Completa', 'Revisão Pré-Viagem', 'Revisão Anual', 'Revisão Pós-Compra', 'Outro'];
   const checklistHtml = ITENS_CHECKLIST.map(item => `
     <div class="checklist-item" id="wrap_${item.key}">
-      <div class="checklist-label"><span class="checklist-icon" id="icon_${item.key}">⬜</span>${item.label}</div>
+      <div class="checklist-label"><span class="checklist-icon" id="icon_${item.key}">·</span>${item.label}</div>
       <div class="checklist-btns">
-        <button type="button" class="chk-btn chk-aprovado" onclick="setItem('${item.key}','aprovado')">✓ Ok</button>
-        <button type="button" class="chk-btn chk-atencao" onclick="setItem('${item.key}','atencao')">⚠ Atenção</button>
-        <button type="button" class="chk-btn chk-skip" onclick="setItem('${item.key}','nao_verificado')">— Pular</button>
+        <button type="button" class="chk-btn chk-aprovado" onclick="setItem('${item.key}','aprovado')">Ok</button>
+        <button type="button" class="chk-btn chk-atencao" onclick="setItem('${item.key}','atencao')">Atenção</button>
+        <button type="button" class="chk-btn chk-skip" onclick="setItem('${item.key}','nao_verificado')">Pular</button>
       </div>
     </div>`).join('');
   const veicOpts = vs.map(v => `<option value="${v.id}" ${v.id === vid ? 'selected' : ''}>${v.marca} ${v.modelo} (${v.ano}) — ${v.placa || 'sem placa'}</option>`).join('');
@@ -1408,7 +1452,7 @@ app.get('/revisao/nova', logado, (q, r) => {
   </div>
   <div class="form-card an an-d2" style="max-width:900px">
     <div class="alert" style="margin-bottom:22px">
-      📋 O documento de revisão será gerado automaticamente com número único (<b>REV-${new Date().getFullYear()}-NNN</b>) ao salvar.
+      O laudo de revisão será gerado automaticamente com número único (<b>REV-${new Date().getFullYear()}-NNN</b>) ao salvar.
     </div>
     <div class="section-label">Dados da revisão</div>
     <div class="g2">
@@ -1429,7 +1473,7 @@ app.get('/revisao/nova', logado, (q, r) => {
     <div class="checklist-grid">${checklistHtml}</div>
     <div style="display:flex;gap:12px;margin-top:28px">
       <a href="/revisoes" class="btn btn-ghost" style="flex:1">Cancelar</a>
-      <button class="btn btn-primary" style="flex:2" onclick="salvarRev()">📋 Salvar e Gerar Documento</button>
+      <button class="btn btn-primary" style="flex:2" onclick="salvarRev()">Salvar e Gerar Laudo</button>
     </div>
   </div>`,
     `<script>
@@ -1443,7 +1487,7 @@ function setItem(key,val){
   var wrap=document.getElementById('wrap_'+key);
   var icon=document.getElementById('icon_'+key);
   wrap.className='checklist-item chk-state-'+val;
-  icon.textContent=val==='aprovado'?'✅':val==='atencao'?'⚠️':'⬜';
+  icon.textContent=val==='aprovado'?'✓':val==='atencao'?'!':'·';
   atualizarProgresso();
 }
 function atualizarProgresso(){
@@ -1471,7 +1515,7 @@ async function salvarRev(){
   };
   var res=await fetch('/api/revisoes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   var j=await res.json();
-  if(j.ok){toast('Revisão salva! Documento '+j.numero_doc+' gerado ✅');setTimeout(function(){window.location.href='/revisao/'+j.id+'/documento';},1200);}
+  if(j.ok){toast('Laudo '+j.numero_doc+' gerado');setTimeout(function(){window.location.href='/revisao/'+j.id+'/documento';},1200);}
   else toast('Erro ao salvar.','erro');
 }
 </script>`, '/revisoes'));
@@ -1486,7 +1530,7 @@ app.get('/revisao/:id/documento', logado, (q, r) => {
   const itens = rv.itens_revisados || {};
   const checkHtml = ITENS_CHECKLIST.map(item => {
     const s = itens[item.key] || 'nao_verificado';
-    const icon = s === 'aprovado' ? '✅' : s === 'atencao' ? '⚠️' : '—';
+    const icon = s === 'aprovado' ? '✓' : s === 'atencao' ? '!' : '—';
     const cls = s === 'aprovado' ? 'doc-item-ok' : s === 'atencao' ? 'doc-item-av' : 'doc-item-skip';
     return `<div class="doc-check-item ${cls}"><span class="doc-check-icon">${icon}</span><span>${item.label}</span></div>`;
   }).join('');
@@ -1497,6 +1541,7 @@ app.get('/revisao/:id/documento', logado, (q, r) => {
   r.send(`<!DOCTYPE html><html lang="pt-BR">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Laudo ${rv.numero_doc} — Pit Stop</title>
+${FAVICON}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="/style.css?v=4">
 <style>
@@ -1519,7 +1564,10 @@ app.get('/revisao/:id/documento', logado, (q, r) => {
 .doc-item-ok{background:rgba(29,185,84,.06);border-color:rgba(29,185,84,.2);}
 .doc-item-av{background:rgba(232,96,28,.07);border-color:rgba(232,96,28,.25);}
 .doc-item-skip{background:var(--gray-50);color:var(--gray-400);}
-.doc-check-icon{font-size:1rem;flex-shrink:0;}
+.doc-check-icon{font-size:.78rem;font-weight:800;flex-shrink:0;width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;}
+.doc-item-ok .doc-check-icon{background:rgba(29,185,84,.15);color:var(--ok);}
+.doc-item-av .doc-check-icon{background:rgba(232,96,28,.15);color:var(--or);}
+.doc-item-skip .doc-check-icon{background:var(--gray-200);color:var(--gray-400);}
 .doc-saude{display:flex;align-items:center;gap:24px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--r);padding:18px 22px;margin-bottom:20px;flex-wrap:wrap;}
 .doc-saude-num{font-size:2.5rem;font-weight:900;color:var(--or);letter-spacing:-2px;}
 .doc-assinatura{border-top:1px solid var(--gray-200);margin-top:28px;padding-top:20px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;}
@@ -1539,7 +1587,7 @@ ${topnav(q.session.user, '/revisoes')}
 <div class="doc-wrap">
   <div class="doc-actions an an-d1">
     <a href="/revisoes" class="btn btn-ghost">← Voltar às revisões</a>
-    <button onclick="window.print()" class="btn btn-primary">🖨️ Imprimir / Salvar PDF</button>
+    <button onclick="window.print()" class="btn btn-primary">Imprimir / Salvar PDF</button>
   </div>
   <div class="doc-header an an-d2">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:18px">
@@ -1559,7 +1607,7 @@ ${topnav(q.session.user, '/revisoes')}
   </div>
   <div class="doc-body an an-d3">
     <div class="doc-section">
-      <div class="doc-section-title">🚗 Dados do veículo</div>
+      <div class="doc-section-title">Dados do veículo</div>
       <div class="doc-grid">
         <div class="doc-field"><div class="doc-field-label">Modelo</div><div class="doc-field-value">${v.modelo}</div></div>
         <div class="doc-field"><div class="doc-field-label">Marca</div><div class="doc-field-value">${v.marca}</div></div>
@@ -1570,24 +1618,24 @@ ${topnav(q.session.user, '/revisoes')}
       </div>
     </div>
     <div class="doc-section">
-      <div class="doc-section-title">📊 Resultado da inspeção</div>
+      <div class="doc-section-title">Resultado da inspeção</div>
       <div class="doc-saude">
         <div><div class="doc-saude-num">${saude}%</div><div style="font-size:.75rem;color:var(--gray-600)">Saúde geral</div></div>
         <div style="display:flex;gap:20px;flex-wrap:wrap">
-          <div style="text-align:center"><div style="font-size:1.5rem;font-weight:900;color:var(--ok)">${aprovados}</div><div style="font-size:.75rem;color:var(--gray-600)">✅ Aprovados</div></div>
-          <div style="text-align:center"><div style="font-size:1.5rem;font-weight:900;color:var(--av)">${atencoes}</div><div style="font-size:.75rem;color:var(--gray-600)">⚠ Atenção</div></div>
+          <div style="text-align:center"><div style="font-size:1.5rem;font-weight:900;color:var(--ok)">${aprovados}</div><div style="font-size:.75rem;color:var(--gray-600)">Aprovados</div></div>
+          <div style="text-align:center"><div style="font-size:1.5rem;font-weight:900;color:var(--av)">${atencoes}</div><div style="font-size:.75rem;color:var(--gray-600)">Atenção</div></div>
           <div style="text-align:center"><div style="font-size:1.5rem;font-weight:900;color:var(--gray-400)">${total - aprovados - atencoes}</div><div style="font-size:.75rem;color:var(--gray-600)">— Não verificado</div></div>
         </div>
         ${rv.proxima_data ? `<div style="margin-left:auto"><div style="font-size:.65rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray-400);margin-bottom:4px">Próxima revisão</div><div style="font-weight:700;font-size:1.1rem">${rv.proxima_data}</div>${rv.proxima_km ? '<div style="font-size:.82rem;color:var(--gray-400)">' + Number(rv.proxima_km).toLocaleString('pt-BR') + ' km</div>' : ''}</div>` : ''}
       </div>
     </div>
     <div class="doc-section">
-      <div class="doc-section-title">🔧 Checklist de itens inspecionados</div>
+      <div class="doc-section-title">Checklist de itens inspecionados</div>
       <div class="doc-checks">${checkHtml}</div>
     </div>
-    ${rv.descricao ? `<div class="doc-section"><div class="doc-section-title">📝 Observações</div><div style="background:var(--gray-50);border:1px solid var(--gray-100);border-radius:var(--r-sm);padding:16px 20px;font-size:.9rem;line-height:1.6;color:var(--gray-800)">${rv.descricao}</div></div>` : ''}
+    ${rv.descricao ? `<div class="doc-section"><div class="doc-section-title">Observações</div><div style="background:var(--gray-50);border:1px solid var(--gray-100);border-radius:var(--r-sm);padding:16px 20px;font-size:.9rem;line-height:1.6;color:var(--gray-800)">${rv.descricao}</div></div>` : ''}
     <div class="doc-section">
-      <div class="doc-section-title">👤 Responsável técnico</div>
+      <div class="doc-section-title">Responsável técnico</div>
       <div class="doc-grid">
         <div class="doc-field"><div class="doc-field-label">Mecânico</div><div class="doc-field-value">${rv.mecanico || '—'}</div></div>
         <div class="doc-field"><div class="doc-field-label">Oficina</div><div class="doc-field-value">${rv.oficina || '—'}</div></div>
@@ -1649,7 +1697,7 @@ app.get('/explorar', logado, (q, r) => {
     <a href="/cadastro" class="btn btn-primary">+ Adicionar à garagem</a>
   </div>
   <div class="catalog-hero an an-d2">
-    <div class="catalog-hero-title">🇧🇷 Os carros mais populares do Brasil</div>
+    <div class="catalog-hero-title">Os carros mais populares do Brasil</div>
     <div class="catalog-hero-sub">Explore especificações, consumo, preço e mais. Clique em "Adicionar" para registrar na sua garagem.</div>
   </div>
   <div style="display:flex;gap:16px;align-items:center;margin-bottom:18px;flex-wrap:wrap" class="an an-d3">
@@ -1662,48 +1710,6 @@ app.get('/explorar', logado, (q, r) => {
   <div class="filter-bar an an-d4">${filterBtns}</div>
   <div class="car-catalog-grid an an-d5">${cards}</div>`,
     `<script>function toggleMobile(){document.getElementById('mobileMenu').classList.toggle('open');}</script>`, '/explorar'));
-});
-
-// ─── PERFIL ────────────────────────────────────────────────────────────────────
-app.get('/perfil', logado, (q, r) => {
-  const db = lerDB();
-  const vs = db.veiculos.filter(v => v.usuario === q.session.user);
-  const ms = db.manutencoes.filter(m => vs.find(v => v.id === m.veiculo_id));
-  const tot = ms.reduce((s, m) => s + (parseFloat(m.custo) || 0), 0);
-  const marcas = [...new Set(vs.map(v => v.marca))];
-  const nome = q.session.user === 'aluno' ? 'Gustavo Pereira de Sousa' : q.session.user;
-  const ini = nome.charAt(0).toUpperCase();
-  r.send(pg('Meu Perfil', q.session.user, `
-  <div class="page-header an an-d1">
-    <div><div class="page-title">Meu <span>Perfil</span></div><div class="page-subtitle">Conta e estatísticas</div></div>
-  </div>
-  <div class="profile-hero an an-d2">
-    <div class="profile-avatar">${ini}</div>
-    <div style="flex:1">
-      <div style="font-size:1.8rem;font-weight:900;color:var(--white)">${nome}</div>
-      <div style="color:rgba(255,255,255,.55);margin-top:4px">Ciência da Computação · CEUB · Gerente de Projeto</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-        <span class="pill pill-orange">5º Semestre</span>
-        <span class="pill pill-blue">Projeto Integrador</span>
-        <span class="pill pill-green">Sprint 01 · 2026</span>
-      </div>
-    </div>
-  </div>
-  <div class="g4 an an-d3">
-    <div class="stat-card"><div class="stat-icon">🚗</div><div class="stat-label">Carros</div><div class="stat-value orange">${vs.length}</div><div class="stat-detail">na garagem</div></div>
-    <div class="stat-card"><div class="stat-icon">🔧</div><div class="stat-label">Manutenções</div><div class="stat-value blue">${ms.length}</div><div class="stat-detail">registradas</div></div>
-    <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-label">Total investido</div><div class="stat-value orange">R$ ${brl(tot)}</div><div class="stat-detail">em serviços</div></div>
-    <div class="stat-card"><div class="stat-icon">🇧🇷</div><div class="stat-label">Catálogo</div><div class="stat-value blue">${CARROS.length}</div><div class="stat-detail">modelos</div></div>
-  </div>
-  <div class="section-label an an-d4">Marcas na garagem</div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px" class="an an-d5">
-    ${marcas.length ? marcas.map(m => `<span class="pill pill-orange" style="padding:7px 18px">${m}</span>`).join('') : '<span style="color:var(--gray-400)">Nenhum veículo ainda.</span>'}
-  </div>
-  <div class="section-label an an-d5">Marcas disponíveis no catálogo</div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap" class="an an-d6">
-    ${[...new Set(CARROS.map(c => c.marca))].sort().map(m => `<span class="pill pill-blue">${m}</span>`).join('')}
-  </div>`,
-    `<script>function toggleMobile(){document.getElementById('mobileMenu').classList.toggle('open');}</script>`, '/perfil'));
 });
 
 // ─── OFICINAS E LOCAIS ───────────────────────────────────────────────────────────
@@ -1725,9 +1731,9 @@ app.get('/oficinas', logado, (q, r) => {
       </div>
       <div class="catalog-body">
         <div class="catalog-name" style="font-size:1.1rem">${o.nome}</div>
-        <div class="catalog-brand" style="margin-bottom:8px">⭐ ${o.aval} · Esp: ${o.especialidade}</div>
+        <div class="catalog-brand" style="margin-bottom:8px">${o.aval} / 5.0 · ${o.especialidade}</div>
         <div style="font-size:0.85rem;color:var(--gray-600);margin-bottom:12px;line-height:1.4">
-          📍 ${o.ende}<br>🚗 Aprox. ${o.dist}
+          ${o.ende}<br><span style="color:var(--gray-400)">Aprox. ${o.dist}</span>
         </div>
         <div class="catalog-actions">
           <a href="#" class="btn btn-outline btn-sm" style="flex:1" onclick="toast('Abrindo Google Maps para rota...'); event.preventDefault();">Ver Rota</a>
@@ -1753,7 +1759,7 @@ app.get('/oficinas', logado, (q, r) => {
 
 // ─── START ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log('\n  🏁 Pit Stop v4.0 — BMW Style');
+  console.log('\n  Pit Stop v4.0');
   console.log('  → http://localhost:' + PORT);
   console.log('  → Login: aluno / senha123');
   console.log('  → ' + CARROS.length + ' modelos\n');
