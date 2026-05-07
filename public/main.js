@@ -5,13 +5,12 @@
 /* ─── TOASTS ─────────────────────────────────── */
 function toast(msg, type) {
   type = type || 'ok';
-  var icons = { ok: '✅', erro: '❌', av: '⚠️' };
   var wrap = document.getElementById('toasts');
   if (!wrap) return;
   var el = document.createElement('div');
   el.className = 'toast toast-' + type;
   el.innerHTML =
-    '<span style="font-size:1.05rem">' + (icons[type] || 'ℹ️') + '</span>' +
+    '<span class="toast-dot toast-dot-' + type + '"></span>' +
     '<span class="toast-text">' + msg + '</span>';
   wrap.appendChild(el);
   setTimeout(function () {
@@ -81,7 +80,6 @@ function catalogFilter(cat) {
     });
     var info = document.getElementById('catalog-count');
     if (info) info.textContent = visible + ' modelo(s) encontrado(s)';
-    // also reset filter buttons
     if (q === '') {
       document.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('active'); });
       var all = document.querySelector('.filter-btn[data-cat="Todos"]');
@@ -89,3 +87,36 @@ function catalogFilter(cat) {
     }
   });
 })();
+
+/* ─── CONFIRM DIALOG ─────────────────────────── */
+var _confirmCb = null;
+function confirmDialog(msg, fn) {
+  var modal = document.getElementById('confirmModal');
+  if (!modal) { if (window.confirm(msg)) fn(); return; }
+  document.getElementById('confirmMsg').textContent = msg;
+  _confirmCb = fn;
+  modal.style.display = 'flex';
+  setTimeout(function () { document.getElementById('confirmOkBtn').focus(); }, 50);
+}
+function _confirmCancel() {
+  var modal = document.getElementById('confirmModal');
+  if (modal) modal.style.display = 'none';
+  _confirmCb = null;
+}
+document.addEventListener('keydown', function (e) {
+  var modal = document.getElementById('confirmModal');
+  if (!modal || modal.style.display === 'none') return;
+  if (e.key === 'Escape') { _confirmCancel(); }
+  if (e.key === 'Enter' && _confirmCb) {
+    modal.style.display = 'none';
+    var cb = _confirmCb; _confirmCb = null; cb();
+  }
+});
+document.addEventListener('DOMContentLoaded', function () {
+  var okBtn = document.getElementById('confirmOkBtn');
+  if (okBtn) okBtn.addEventListener('click', function () {
+    var modal = document.getElementById('confirmModal');
+    if (modal) modal.style.display = 'none';
+    if (_confirmCb) { var cb = _confirmCb; _confirmCb = null; cb(); }
+  });
+});

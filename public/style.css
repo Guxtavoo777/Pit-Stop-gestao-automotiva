@@ -285,6 +285,8 @@ a {
 .main {
   min-height: calc(100vh - 62px);
   padding: 36px 44px;
+  max-width: 1280px;
+  margin: 0 auto;
 }
 
 @media(max-width:860px) {
@@ -481,10 +483,11 @@ a {
 
 .stat-icon {
   position: absolute;
-  top: 18px;
-  right: 18px;
-  font-size: 1.5rem;
-  opacity: .12;
+  top: 16px;
+  right: 16px;
+  opacity: .08;
+  color: var(--gray-800);
+  pointer-events: none;
 }
 
 @media(max-width:900px) {
@@ -1260,13 +1263,16 @@ tr:hover td {
 }
 
 .catalog-hero::after {
-  content: '🇧🇷';
+  content: 'BR';
   position: absolute;
   right: 44px;
   top: 50%;
   transform: translateY(-50%);
   font-size: 3.5rem;
-  opacity: .12;
+  font-weight: 900;
+  letter-spacing: -2px;
+  color: var(--white);
+  opacity: .06;
 }
 
 .catalog-hero-title {
@@ -1479,6 +1485,17 @@ tr:hover td {
   border-left: 3px solid var(--or);
 }
 
+.toast-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.toast-dot-ok { background: var(--ok); }
+.toast-dot-erro { background: var(--cr); }
+.toast-dot-av { background: var(--or); }
+
 .toast-text {
   font-size: .85rem;
   font-weight: 600;
@@ -1562,8 +1579,88 @@ tr:hover td {
   font-weight: 600;
 }
 
+/* ─── EMPTY STATE ─────────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 32px;
+  text-align: center;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--r);
+}
+
+.empty-state-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--gray-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  color: var(--gray-400);
+}
+
+.empty-state-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--gray-700);
+  margin-bottom: 6px;
+}
+
+.empty-state-sub {
+  font-size: .88rem;
+  color: var(--gray-400);
+  margin-bottom: 24px;
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+.cars-grid .empty-state {
+  grid-column: 1 / -1;
+}
+
 .hidden {
   display: none !important;
+}
+
+/* ─── CONFIRM MODAL ───────────────────────────── */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .55);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.confirm-dialog {
+  background: var(--white);
+  border-radius: var(--r);
+  padding: 28px 28px 24px;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+}
+
+.confirm-msg {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-800);
+  margin-bottom: 22px;
+  line-height: 1.4;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
 }
 
 .divider {
@@ -1829,10 +1926,28 @@ tr:hover td {
 }
 
 .checklist-icon {
-  font-size: 1rem;
-  width: 22px;
-  text-align: center;
+  font-size: .78rem;
+  font-weight: 700;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  background: var(--gray-200);
+  color: var(--gray-400);
+  transition: var(--transition);
+}
+
+.chk-state-aprovado .checklist-icon {
+  background: rgba(29,185,84,.15);
+  color: var(--ok);
+}
+
+.chk-state-atencao .checklist-icon {
+  background: rgba(232,96,28,.15);
+  color: var(--or);
 }
 
 .checklist-btns {
