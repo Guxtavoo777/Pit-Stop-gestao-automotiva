@@ -13,6 +13,7 @@
   --gray-200: #e2e2e2;
   --gray-400: #9a9a9a;
   --gray-600: #5a5a5a;
+  --gray-700: #3a3a3a;
   --gray-800: #2a2a2a;
 
   /* Brand orange (Pit Stop) */
@@ -232,7 +233,6 @@ a {
 
 /* Mobile dropdown nav */
 .mobile-menu {
-  display: none;
   position: fixed;
   top: 62px;
   left: 0;
@@ -243,10 +243,19 @@ a {
   z-index: 99;
   flex-direction: column;
   gap: 4px;
+  /* hidden by default via clip + opacity — no layout flicker */
+  display: flex;
+  clip-path: inset(0 0 100% 0);
+  opacity: 0;
+  pointer-events: none;
+  transition: clip-path .28s cubic-bezier(.4, 0, .2, 1),
+              opacity .22s ease;
 }
 
 .mobile-menu.open {
-  display: flex;
+  clip-path: inset(0 0 0% 0);
+  opacity: 1;
+  pointer-events: all;
 }
 
 .mobile-menu a {
@@ -676,6 +685,13 @@ a {
   border-left-color: var(--cr);
 }
 
+/* ─── FOCUS VISIBLE ──────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--or);
+  outline-offset: 3px;
+  border-radius: var(--r-xs);
+}
+
 /* ─── BUTTONS ─────────────────────────────────────────── */
 .btn {
   display: inline-flex;
@@ -693,6 +709,11 @@ a {
   transition: var(--transition);
   white-space: nowrap;
   letter-spacing: .2px;
+}
+
+.btn:active {
+  transform: scale(.97) !important;
+  transition-duration: .08s;
 }
 
 .btn-primary {
@@ -1527,43 +1548,56 @@ tr:hover td {
 
 /* ─── ANIMATIONS ─────────────────────────────────────── */
 @keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(16px)
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0)
-  }
+  from { opacity: 0; transform: translateY(20px) }
+  to   { opacity: 1; transform: translateY(0) }
 }
 
+@keyframes fade-in {
+  from { opacity: 0 }
+  to   { opacity: 1 }
+}
+
+/* Elements start invisible; JS adds .is-visible via IntersectionObserver */
 .an {
-  animation: fade-up .4s cubic-bezier(.4, 0, .2, 1) both;
+  opacity: 0;
+  transform: translateY(20px);
 }
 
-.an-d1 {
-  animation-delay: .04s
+.an.is-visible {
+  animation: fade-up .45s cubic-bezier(.4, 0, .2, 1) both;
 }
 
-.an-d2 {
-  animation-delay: .09s
+.an-d1.is-visible { animation-delay: .04s }
+.an-d2.is-visible { animation-delay: .09s }
+.an-d3.is-visible { animation-delay: .14s }
+.an-d4.is-visible { animation-delay: .19s }
+.an-d5.is-visible { animation-delay: .24s }
+.an-d6.is-visible { animation-delay: .29s }
+
+/* Page transition */
+body {
+  animation: fade-in .18s ease both;
 }
 
-.an-d3 {
-  animation-delay: .14s
+/* Navbar scroll state */
+.topnav.scrolled {
+  background: rgba(10, 10, 10, .96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 4px 32px rgba(0, 0, 0, .45);
 }
 
-.an-d4 {
-  animation-delay: .19s
-}
+/* ─── REDUCED MOTION ─────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
 
-.an-d5 {
-  animation-delay: .24s
-}
-
-.an-d6 {
-  animation-delay: .29s
+  .an { opacity: 1; transform: none; }
+  .an.is-visible { animation: none; }
+  body { animation: none; }
 }
 
 /* ─── MISC ───────────────────────────────────────────── */
@@ -1625,6 +1659,12 @@ tr:hover td {
 
 .hidden {
   display: none !important;
+}
+
+/* Page leave transition */
+body.is-leaving {
+  animation: fade-in .2s ease reverse both;
+  pointer-events: none;
 }
 
 /* ─── CONFIRM MODAL ───────────────────────────── */
