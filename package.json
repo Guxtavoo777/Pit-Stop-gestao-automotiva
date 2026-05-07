@@ -12,7 +12,8 @@
     "ejs",
     "sqlite"
   ],
-  "license": "MIT",
+  "author": "Gustavo Pereira De Sousa",
+  "license": "BSD-3-Clause",
   "engines": {
     "node": ">=18.0.0"
   },

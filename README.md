@@ -1,14 +1,10 @@
 # Pit Stop — Gestão Automotiva
 
+![Testes](https://github.com/Guxtavoo777/Pit-Stop-gestao-automotiva/actions/workflows/ci.yml/badge.svg)
+![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
+![Licença](https://img.shields.io/badge/licen%C3%A7a-BSD--3--Clause-blue)
+
 Plataforma web para gerenciamento de veículos, manutenções e revisões. Construída com Node.js + Express + EJS, banco SQLite, autenticação com bcrypt e proteção CSRF.
-
----
-
-## Screenshots
-
-| Dashboard | Garagem | Laudo de Revisão |
-|-----------|---------|-----------------|
-| Visão geral com gráfico de gastos e alertas de revisão | Cards de veículos com status em tempo real | PDF imprimível com checklist completo |
 
 ---
 
@@ -42,8 +38,8 @@ Plataforma web para gerenciamento de veículos, manutenções e revisões. Const
 
 ```bash
 # 1. Clone o repositório
-git clone <url-do-repo>
-cd pit-stop
+git clone https://github.com/Guxtavoo777/Pit-Stop-gestao-automotiva.git
+cd Pit-Stop-gestao-automotiva
 
 # 2. Instale as dependências
 npm install
@@ -60,9 +56,9 @@ npm run dev
 
 Acesse: `http://localhost:3000`
 
-**Credencial de exemplo:** `aluno` / `senha123`
+> **Conta de demonstração** (apenas ambiente local): `aluno` / `senha123`
 
-Na primeira execução, o banco `pitstop.db` é criado automaticamente com dados de demonstração migrados do `db.json`.
+Na primeira execução o banco `pitstop.db` é criado automaticamente com dados de demonstração.
 
 ---
 

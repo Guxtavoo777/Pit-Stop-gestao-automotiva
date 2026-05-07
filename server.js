@@ -27,7 +27,13 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(session({
   store: new BetterSqlite3Store({ client: db }),
-  secret: process.env.SESSION_SECRET || 'pitstop_dev_secret_troque_em_producao',
+  secret: process.env.SESSION_SECRET || (() => {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('FATAL: variável SESSION_SECRET não definida em produção. Encerrando.');
+      process.exit(1);
+    }
+    return crypto.randomBytes(32).toString('hex');
+  })(),
   resave: false,
   saveUninitialized: false,
   cookie: {
