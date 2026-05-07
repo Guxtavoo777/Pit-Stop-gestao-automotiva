@@ -32,7 +32,7 @@
     <div class="form-group"><label class="form-label">Observações</label><textarea class="form-input" id="de" rows="3" placeholder="Anote qualquer detalhe do serviço..."></textarea></div>
     <div style="display:flex;gap:12px;margin-top:8px">
       <a href="/veiculo/<%= v.id %>" class="btn btn-ghost" style="flex:1">Cancelar</a>
-      <button class="btn btn-primary" style="flex:2" onclick="salvar()">Salvar manutenção</button>
+      <button class="btn btn-primary" style="flex:2" onclick="salvar(this)">Salvar manutenção</button>
     </div>
   </div>
 
@@ -41,7 +41,7 @@
 <script>
 var VID = <%= v.id %>;
 document.getElementById('dt').valueAsDate = new Date();
-async function salvar() {
+async function salvar(btn) {
   var d = {
     tipo: document.getElementById('tp').value,
     oficina: document.getElementById('of').value,
@@ -53,14 +53,16 @@ async function salvar() {
     descricao: document.getElementById('de').value
   };
   if (!d.data) { toast('Informe a data do serviço!', 'erro'); return; }
-  var res = await fetch('/api/manut/' + VID, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) });
-  var j = await res.json();
-  if (j.ok) {
-    toast('Manutenção registrada');
-    setTimeout(function() { window.location.href = '/veiculo/' + VID; }, 900);
-  } else {
-    toast('Erro ao salvar.', 'erro');
-  }
+  withLoading(btn, async function() {
+    var res = await fetch('/api/manut/' + VID, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) });
+    var j = await res.json();
+    if (j.ok) {
+      toast('Manutenção registrada');
+      setTimeout(function() { window.location.href = '/veiculo/' + VID; }, 900);
+    } else {
+      toast(j.msg || 'Erro ao salvar.', 'erro');
+    }
+  });
 }
 </script>
 </body>
