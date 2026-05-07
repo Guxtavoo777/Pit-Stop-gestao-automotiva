@@ -3,6 +3,7 @@
 <%- include('partials/topnav') %>
 <main class="main">
 
+  <% if (vs.length) { %>
   <div class="hero an an-d1">
     <img class="hero-bg" src="<%= heroImg %>" alt="<%= heroModel %>" onerror="this.src='https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=1400&auto=format'">
     <div class="hero-overlay"></div>
@@ -16,6 +17,19 @@
       </div>
     </div>
   </div>
+  <% } else { %>
+  <div class="empty-dashboard an an-d1">
+    <div class="empty-dashboard-icon">
+      <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0zM1 1h4l2.68 13.39a2 2 0 001.98 1.61h9.72a2 2 0 001.98-1.68L23 6H6"/></svg>
+    </div>
+    <div class="empty-dashboard-title">Bem-vindo, <%= user %>!</div>
+    <p class="empty-dashboard-sub">Sua garagem digital está vazia. Adicione seu primeiro veículo para começar a registrar manutenções, revisões e acompanhar seus gastos.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px">
+      <a href="/cadastro" class="btn btn-primary">+ Adicionar meu primeiro carro</a>
+      <a href="/explorar" class="btn btn-ghost">Explorar catálogo</a>
+    </div>
+  </div>
+  <% } %>
 
   <div class="g4 an an-d2">
     <div class="stat-card"><div class="stat-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0zM1 1h4l2.68 13.39a2 2 0 001.98 1.61h9.72a2 2 0 001.98-1.68L23 6H6"/></svg></div><div class="stat-label">Veículos</div><div class="stat-value orange"><%= vs.length %></div><div class="stat-detail">na garagem</div></div>

@@ -1575,6 +1575,8 @@ tr:hover td {
 }
 
 .an.is-visible {
+  opacity: 1;
+  transform: none;
   animation: fade-up .45s cubic-bezier(.4, 0, .2, 1) both;
 }
 
@@ -1666,6 +1668,43 @@ body {
 
 .cars-grid .empty-state {
   grid-column: 1 / -1;
+}
+
+/* ─── EMPTY DASHBOARD (no vehicles) ───────────────────── */
+.empty-dashboard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 64px 24px 48px;
+  background: var(--gray-50);
+  border: 1.5px solid var(--gray-100);
+  border-radius: var(--r-lg);
+  margin-bottom: 32px;
+}
+.empty-dashboard-icon {
+  width: 80px;
+  height: 80px;
+  background: rgba(232, 96, 28, .08);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--or);
+  margin-bottom: 24px;
+}
+.empty-dashboard-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--gray-900);
+  margin-bottom: 12px;
+}
+.empty-dashboard-sub {
+  color: var(--gray-400);
+  font-size: .92rem;
+  max-width: 440px;
+  line-height: 1.7;
+  margin-bottom: 28px;
 }
 
 .hidden {
