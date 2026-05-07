@@ -196,6 +196,24 @@ a {
   cursor: pointer;
 }
 
+.nav-logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-xs);
+  color: rgba(255, 255, 255, .45);
+  transition: var(--transition);
+  text-decoration: none;
+}
+
+.nav-logout-btn:hover {
+  color: #E53030;
+  background: rgba(229, 48, 48, .1);
+}
+
+
 .nav-btn-menu {
   display: none;
   align-items: center;
