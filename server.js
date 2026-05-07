@@ -5,7 +5,7 @@ const path = require('path');
 const CARROS = require('./carros');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const DB = path.join(__dirname, 'db.json');
 
 // ─── DB ───────────────────────────────────────────────────────────────────────
@@ -365,6 +365,24 @@ app.post('/api/veiculos', logado, (q, r) => {
   const db = lerDB(); const id = (db.nextV || Date.now());
   db.veiculos.push({ id, ...q.body, usuario: q.session.user });
   db.nextV = (id + 1); salvarDB(db); r.json({ ok: true, id });
+});
+app.put('/api/veiculos/:id', logado, (q, r) => {
+  const db = lerDB(); const id = parseInt(q.params.id);
+  const v = db.veiculos.find(x => x.id === id && x.usuario === q.session.user);
+  if (!v) return r.json({ ok: false, msg: 'Veículo não encontrado.' });
+  const { km, cor, placa, observacoes } = q.body;
+  if (km !== undefined) v.km = km;
+  if (cor !== undefined) v.cor = cor;
+  if (placa !== undefined) v.placa = placa;
+  if (observacoes !== undefined) v.observacoes = observacoes;
+  salvarDB(db); r.json({ ok: true });
+});
+app.patch('/api/veiculos/:id/status', logado, (q, r) => {
+  const db = lerDB(); const id = parseInt(q.params.id);
+  const v = db.veiculos.find(x => x.id === id && x.usuario === q.session.user);
+  if (!v) return r.json({ ok: false, msg: 'Veículo não encontrado.' });
+  v.ativo = (v.ativo === false) ? true : false;
+  salvarDB(db); r.json({ ok: true, ativo: v.ativo });
 });
 app.delete('/api/veiculos/:id', logado, (q, r) => {
   const db = lerDB(); const id = parseInt(q.params.id);
@@ -848,15 +866,19 @@ function toggleMobile(){document.getElementById('mobileMenu').classList.toggle('
 // ─── GARAGEM ────────────────────────────────────────────────────────────────────
 app.get('/garagem', logado, (q, r) => {
   const vs = lerDB().veiculos.filter(v => v.usuario === q.session.user);
-  const cards = vs.map((v, i) => {
+  const vsAtivos = vs.filter(v => v.ativo !== false);
+  const vsInativos = vs.filter(v => v.ativo === false);
+
+  function cardVeiculo(v, i) {
     const s = situacao(v.id); const c = gastos(v.id);
     const sitCls = s.tipo === 'ok' ? 's-ok' : s.tipo === 'critico' ? 's-cr' : 's-av';
-    return `<div onclick="window.location.href='/veiculo/${v.id}'" style="cursor:pointer" class="car-card an an-d${Math.min(i + 2, 6)}">
+    const inativo = v.ativo === false;
+    return `<div onclick="window.location.href='/veiculo/${v.id}'" style="cursor:pointer${inativo ? ';opacity:.65;filter:grayscale(.6)' : ''}" class="car-card an an-d${Math.min(i + 2, 6)}">
       <div class="car-photo">
         <img src="${v.img}" alt="${v.modelo}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=900&auto=format'">
         <div class="car-photo-overlay"></div>
         <span class="tag-brand">${v.marca}</span>
-        <span class="tag-status ${sitCls}">${s.texto}</span>
+        ${inativo ? '<span class="tag-status" style="background:rgba(100,100,100,.85);color:#fff;position:absolute;top:44px;right:10px">⏸ Inativo</span>' : `<span class="tag-status ${sitCls}">${s.texto}</span>`}
       </div>
       <div class="car-body">
         <div class="car-name">${v.modelo}</div>
@@ -869,18 +891,37 @@ app.get('/garagem', logado, (q, r) => {
         </div>
         <div class="car-actions" onclick="event.stopPropagation()">
           <a href="/veiculo/${v.id}" class="btn btn-primary" style="flex:1">Ver detalhes</a>
-          <a href="/manutencao/${v.id}" class="btn btn-ghost btn-sm" title="Registrar manutenção">🔧</a>
+          <a href="/editar-veiculo/${v.id}" class="btn btn-ghost btn-sm" title="Editar veículo">✏️</a>
+          <button class="btn btn-ghost btn-sm" title="${inativo ? 'Reativar' : 'Inativar'} veículo" onclick="toggleStatus(event,${v.id},this)">${inativo ? '▶️' : '⏸'}</button>
         </div>
       </div>
     </div>`;
-  }).join('');
+  }
+
+  const cardsAtivos = vsAtivos.map((v, i) => cardVeiculo(v, i)).join('');
+  const cardsInativos = vsInativos.map((v, i) => cardVeiculo(v, i)).join('');
+  const secaoInativos = vsInativos.length ? `
+    <div class="section-label" style="margin-top:32px;margin-bottom:16px">⏸ Veículos Inativos (${vsInativos.length})</div>
+    <div class="cars-grid">${cardsInativos}</div>` : '';
+
   r.send(pg('Minha Garagem', q.session.user, `
   <div class="page-header an an-d1">
-    <div><div class="page-title">Minha <span>Garagem</span></div><div class="page-subtitle">${vs.length} carro(s) registrado(s)</div></div>
+    <div><div class="page-title">Minha <span>Garagem</span></div><div class="page-subtitle">${vsAtivos.length} ativo(s) · ${vsInativos.length} inativo(s)</div></div>
     <a href="/cadastro" class="btn btn-primary">+ Adicionar carro</a>
   </div>
-  <div class="cars-grid">${cards || '<div class="no-items" style="grid-column:1/-1">Nenhum carro ainda. <a href="/cadastro">Adicionar meu primeiro carro →</a></div>'}</div>
-  `, `<script>function toggleMobile(){document.getElementById('mobileMenu').classList.toggle('open');}</script>`, '/garagem'));
+  <div class="cars-grid">${cardsAtivos || '<div class="no-items" style="grid-column:1/-1">Nenhum carro ainda. <a href="/cadastro">Adicionar meu primeiro carro →</a></div>'}</div>
+  ${secaoInativos}
+  `, `<script>
+function toggleMobile(){document.getElementById('mobileMenu').classList.toggle('open');}
+async function toggleStatus(e,id,btn){
+  e.stopPropagation();
+  if(!confirm('Deseja alterar o status deste veículo?')) return;
+  var res = await fetch('/api/veiculos/'+id+'/status',{method:'PATCH'});
+  var j = await res.json();
+  if(j.ok){ toast(j.ativo===false ? 'Veículo inativado ⏸' : 'Veículo reativado ▶️','av'); setTimeout(function(){location.reload();},900); }
+  else toast('Erro ao alterar status.','erro');
+}
+</script>`, '/garagem'));
 });
 
 // ─── DETALHE ────────────────────────────────────────────────────────────────────
@@ -922,7 +963,7 @@ app.get('/veiculo/:id', logado, (q, r) => {
         <div class="rev-mini-stats">
           <div><span class="rev-mini-val" style="color:var(--ok)">${aprovR}</span><span class="rev-mini-label">Aprovados</span></div>
           <div><span class="rev-mini-val" style="color:var(--av)">${atencR}</span><span class="rev-mini-label">Atenção</span></div>
-          <div><span class="rev-mini-val" style="color:var(--or)">${totalR > 0 ? Math.round(aprovR/totalR*100) : 0}%</span><span class="rev-mini-label">Saúde</span></div>
+          <div><span class="rev-mini-val" style="color:var(--or)">${totalR > 0 ? Math.round(aprovR / totalR * 100) : 0}%</span><span class="rev-mini-label">Saúde</span></div>
           <div><span class="rev-mini-val" style="color:var(--or)">R$ ${brl(rv.custo)}</span><span class="rev-mini-label">Custo</span></div>
         </div>
         <div class="rev-card-actions">
@@ -930,13 +971,17 @@ app.get('/veiculo/:id', logado, (q, r) => {
           <button class="btn btn-danger btn-sm" onclick="removerRev(${rv.id})">Remover</button>
         </div>
       </div>
-    </div>`;}).join('') : `<div class="no-items" style="padding:32px;text-align:center">Nenhuma revisão registrada para este veículo.</div>`;
+    </div>`;
+  }).join('') : `<div class="no-items" style="padding:32px;text-align:center">Nenhuma revisão registrada para este veículo.</div>`;
 
+  const inativo = v.ativo === false;
   r.send(pg(v.modelo, q.session.user, `
+  ${inativo ? `<div class="alert" style="background:rgba(100,100,100,.08);border-color:rgba(100,100,100,.25);margin-bottom:0">⏸ Este veículo está <b>inativo</b>. <a href="/editar-veiculo/${v.id}" style="color:var(--or)">Reativar →</a></div>` : ''}
   <div class="page-header an an-d1">
     <div><div class="page-title"><span>${v.modelo}</span></div><div class="page-subtitle">${v.marca} · ${v.ano}${v.cor ? ' · ' + v.cor : ''}</div></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <a href="/manutencao/${v.id}" class="btn btn-primary">🔧 Registrar manutenção</a>
+      <a href="/editar-veiculo/${v.id}" class="btn btn-ghost">✏️ Editar</a>
       <a href="/garagem" class="btn btn-ghost">← Voltar</a>
     </div>
   </div>
@@ -1055,6 +1100,104 @@ async function salvar(){
   else toast('Erro ao salvar.','erro');
 }
 </script>`, '/cadastro'));
+});
+
+// ─── EDITAR VEÍCULO ────────────────────────────────────────────────────────────
+app.get('/editar-veiculo/:id', logado, (q, r) => {
+  const db = lerDB();
+  const v = db.veiculos.find(x => x.id === parseInt(q.params.id) && x.usuario === q.session.user);
+  if (!v) return r.redirect('/garagem');
+  const inativo = v.ativo === false;
+  r.send(pg('Editar Veículo', q.session.user, `
+  <div class="page-header an an-d1">
+    <div><div class="page-title">Editar <span>${v.modelo}</span></div><div class="page-subtitle">${v.marca} · ${v.ano}</div></div>
+    <a href="/veiculo/${v.id}" class="btn btn-ghost">← Voltar</a>
+  </div>
+
+  <div class="form-card an an-d2">
+
+    <!-- INFO FIXA -->
+    <div class="alert" style="margin-bottom:22px;background:rgba(232,96,28,.06);border-color:rgba(232,96,28,.2)">
+      🚗 <b>${v.marca} ${v.modelo} ${v.ano}</b> · Motor: ${v.motor || '—'} · ${v.potencia || '—'}
+      <br><small style="color:var(--gray-400);margin-top:4px;display:block">Os dados técnicos (motor, câmbio, etc.) são fixos do catálogo. Você pode editar os seus dados operacionais abaixo.</small>
+    </div>
+
+    <!-- DADOS EDITÁVEIS -->
+    <div class="perfil-section-title">🔧 Dados Operacionais</div>
+    <div class="g2" style="margin-top:20px">
+      <div class="form-group">
+        <label class="form-label">Quilometragem atual *</label>
+        <input class="form-input" id="ev-km" type="number" value="${v.km || ''}" placeholder="Ex: 45000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cor</label>
+        <input class="form-input" id="ev-cor" value="${v.cor || ''}" placeholder="Ex: Branco Pérola">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Placa</label>
+        <input class="form-input" id="ev-placa" value="${v.placa || ''}" placeholder="Ex: ABC-1234" style="text-transform:uppercase">
+      </div>
+    </div>
+    <div class="form-group" style="margin-top:16px">
+      <label class="form-label">Observações</label>
+      <textarea class="form-input" id="ev-obs" rows="3" placeholder="Anotações gerais sobre o veículo...">${v.observacoes || ''}</textarea>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:24px">
+      <a href="/veiculo/${v.id}" class="btn btn-ghost" style="flex:1">Cancelar</a>
+      <button class="btn btn-primary" style="flex:2" onclick="salvarEdicao()">✅ Salvar alterações</button>
+    </div>
+    <div class="perfil-feedback" id="ev-msg"></div>
+  </div>
+
+  <!-- ATIVAR / INATIVAR -->
+  <div class="form-card an an-d3" style="margin-top:20px;border-color:${inativo ? 'rgba(76,175,80,.25)' : 'rgba(229,48,48,.2)'}">
+    <div class="perfil-section-title" style="color:${inativo ? '#4caf50' : '#E53030'}">${inativo ? '▶️ Reativar Veículo' : '⏸ Inativar Veículo'}</div>
+    <p style="font-size:.88rem;color:var(--gray-400);margin:14px 0 20px;line-height:1.7">
+      ${inativo
+      ? 'Este veículo está <b>inativo</b> e não aparece nos alertas e contagens principais. Reative-o para voltar ao normal.'
+      : 'Inativar o veículo oculta-o da contagem principal e de alertas. O histórico de manutenções é preservado. Útil para veículos vendidos ou temporariamente fora de uso.'
+    }
+    </p>
+    <button class="btn ${inativo ? 'btn-primary' : 'btn-danger'}" onclick="alterarStatus()" id="btn-status">
+      ${inativo ? '▶️ Reativar veículo' : '⏸ Inativar veículo'}
+    </button>
+    <div class="perfil-feedback" id="st-msg"></div>
+  </div>
+  `, `<script>
+function toggleMobile(){document.getElementById('mobileMenu').classList.toggle('open');}
+
+async function salvarEdicao(){
+  var km = document.getElementById('ev-km').value.trim();
+  var cor = document.getElementById('ev-cor').value.trim();
+  var placa = document.getElementById('ev-placa').value.trim().toUpperCase();
+  var obs = document.getElementById('ev-obs').value.trim();
+  var msg = document.getElementById('ev-msg');
+  if(!km){ msg.className='perfil-feedback err'; msg.textContent='✗ Quilometragem é obrigatória.'; return; }
+  var res = await fetch('/api/veiculos/${v.id}',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({km,cor,placa,observacoes:obs})});
+  var j = await res.json();
+  if(j.ok){
+    toast('Veículo atualizado! ✅');
+    msg.className='perfil-feedback ok'; msg.textContent='✓ Dados salvos com sucesso!';
+    setTimeout(function(){ msg.textContent=''; },3000);
+  } else {
+    msg.className='perfil-feedback err'; msg.textContent='✗ Erro ao salvar.';
+  }
+}
+
+async function alterarStatus(){
+  var confirmMsg = ${inativo ? "'Deseja reativar este veículo?'" : "'Deseja inativar este veículo? O histórico será preservado.'"};
+  if(!confirm(confirmMsg)) return;
+  var res = await fetch('/api/veiculos/${v.id}/status',{method:'PATCH'});
+  var j = await res.json();
+  if(j.ok){
+    toast(j.ativo===false ? 'Veículo inativado ⏸' : 'Veículo reativado ▶️', 'av');
+    setTimeout(function(){ window.location.href='/garagem'; }, 1000);
+  } else {
+    document.getElementById('st-msg').className='perfil-feedback err';
+    document.getElementById('st-msg').textContent='✗ Erro ao alterar status.';
+  }
+}
+</script>`, '/garagem'));
 });
 
 // ─── MANUTENÇÃO ────────────────────────────────────────────────────────────────
@@ -1180,7 +1323,7 @@ app.get('/revisoes', logado, (q, r) => {
           <div class="rev-mini-stats">
             <div><span class="rev-mini-val" style="color:var(--ok)">${aprovados}</span><span class="rev-mini-label">Aprovados</span></div>
             <div><span class="rev-mini-val" style="color:var(--av)">${atencoes}</span><span class="rev-mini-label">Atenção</span></div>
-            <div><span class="rev-mini-val" style="color:var(--or)">${total > 0 ? Math.round(aprovados/total*100) : 0}%</span><span class="rev-mini-label">Saúde</span></div>
+            <div><span class="rev-mini-val" style="color:var(--or)">${total > 0 ? Math.round(aprovados / total * 100) : 0}%</span><span class="rev-mini-label">Saúde</span></div>
             <div><span class="rev-mini-val">${rv.km_na_revisao ? Number(rv.km_na_revisao).toLocaleString('pt-BR') + ' km' : '—'}</span><span class="rev-mini-label">KM</span></div>
             <div><span class="rev-mini-val" style="color:var(--or)">R$ ${brl(rv.custo)}</span><span class="rev-mini-label">Custo</span></div>
           </div>

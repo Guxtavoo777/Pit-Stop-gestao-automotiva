@@ -9,8 +9,8 @@ yarn-error.log*
 .env.*
 !.env.example
 
-# ─── Banco de dados local (dados de usuários/veículos reais) ─────────────────
-db.json
+# ─── Banco de dados (db.json incluído para deploy no Railway) ────────────────
+# db.json
 
 # ─── Sistema operacional ─────────────────────────────────────────────────────
 .DS_Store
