@@ -57,7 +57,7 @@
     </div>
     <div style="display:flex;gap:12px;margin-top:28px">
       <a href="/revisoes" class="btn btn-ghost" style="flex:1">Cancelar</a>
-      <button class="btn btn-primary" style="flex:2" onclick="salvarRev()">Salvar e Gerar Laudo</button>
+      <button class="btn btn-primary" style="flex:2" onclick="salvarRev(this)">Salvar e Gerar Laudo</button>
     </div>
   </div>
 
@@ -80,15 +80,13 @@ function atualizarProgresso() {
   var marcados = Object.values(estado).filter(function(v){ return v !== 'nao_verificado'; }).length;
   document.getElementById('chk_progress').textContent = marcados + ' / ' + ITENS.length + ' itens marcados';
 }
-async function salvarRev() {
+async function salvarRev(btn) {
   var vid = document.getElementById('rv_vid').value;
   var tipo = document.getElementById('rv_tipo').value;
   var data = document.getElementById('rv_data').value;
   if (!vid || !tipo || !data) { toast('Preencha veículo, tipo e data!', 'erro'); return; }
   var body = {
-    veiculo_id: parseInt(vid),
-    tipo: tipo,
-    data: data,
+    veiculo_id: parseInt(vid), tipo: tipo, data: data,
     km_na_revisao: document.getElementById('rv_km').value || null,
     oficina: document.getElementById('rv_oficina').value,
     mecanico: document.getElementById('rv_mecanico').value,
@@ -96,17 +94,18 @@ async function salvarRev() {
     proxima_data: document.getElementById('rv_proxdata').value || null,
     proxima_km: document.getElementById('rv_proxkm').value || null,
     descricao: document.getElementById('rv_obs').value,
-    itens_revisados: estado,
-    status: 'aprovado'
+    itens_revisados: estado, status: 'aprovado'
   };
-  var res = await fetch('/api/revisoes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  var j = await res.json();
-  if (j.ok) {
-    toast('Laudo ' + j.numero_doc + ' gerado');
-    setTimeout(function() { window.location.href = '/revisao/' + j.id + '/documento'; }, 1200);
-  } else {
-    toast('Erro ao salvar.', 'erro');
-  }
+  withLoading(btn, async function() {
+    var res = await fetch('/api/revisoes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    var j = await res.json();
+    if (j.ok) {
+      toast('Laudo ' + j.numero_doc + ' gerado');
+      setTimeout(function() { window.location.href = '/revisao/' + j.id + '/documento'; }, 1200);
+    } else {
+      toast(j.msg || 'Erro ao salvar.', 'erro');
+    }
+  });
 }
 </script>
 </body>

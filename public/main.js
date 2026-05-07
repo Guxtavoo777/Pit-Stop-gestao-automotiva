@@ -1,6 +1,34 @@
 /* ═══════════════════════════════════════════════
-   PIT STOP — Client-Side JavaScript Global
+   PIT STOP — Client-Side JavaScript v5.0
 ═══════════════════════════════════════════════ */
+
+/* ─── CSRF FETCH INTERCEPTOR ─────────────────── */
+(function () {
+  var _fetch = window.fetch;
+  window.fetch = function (url, opts) {
+    opts = opts || {};
+    var method = (opts.method || 'GET').toUpperCase();
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+      var meta = document.querySelector('meta[name="csrf-token"]');
+      if (meta) {
+        opts.headers = opts.headers || {};
+        opts.headers['x-csrf-token'] = meta.content;
+      }
+    }
+    return _fetch(url, opts);
+  };
+})();
+
+/* ─── LOADING STATE UTILITY ──────────────────── */
+function withLoading(btn, asyncFn) {
+  var original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="btn-spinner"></span>';
+  return Promise.resolve(asyncFn()).finally(function () {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  });
+}
 
 /* ─── TOASTS ─────────────────────────────────── */
 function toast(msg, type) {

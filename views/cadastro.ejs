@@ -33,7 +33,7 @@
     </div>
     <div style="display:flex;gap:12px;margin-top:24px">
       <a href="/garagem" class="btn btn-ghost" style="flex:1">Cancelar</a>
-      <button class="btn btn-primary" style="flex:2" onclick="salvar()">Salvar na garagem</button>
+      <button class="btn btn-primary" style="flex:2" onclick="salvar(this)">Salvar na garagem</button>
     </div>
   </div>
 
@@ -71,14 +71,16 @@ function limpar() {
   bi.textContent = 'Digite 2 ou mais letras para ver os modelos'; SEL = null; RES = [];
   ['fk', 'fc', 'fp'].forEach(function(id) { document.getElementById(id).value = ''; });
 }
-async function salvar() {
+async function salvar(btn) {
   if (!SEL) { toast('Primeiro busque e selecione o modelo no Passo 1!', 'erro'); return; }
   var d = Object.assign({}, SEL, { km: document.getElementById('fk').value.trim(), cor: document.getElementById('fc').value.trim(), placa: document.getElementById('fp').value.trim() });
   if (!d.km) { toast('Preencha a Quilometragem para continuar!', 'erro'); return; }
-  var res = await fetch('/api/veiculos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) });
-  var j = await res.json();
-  if (j.ok) { toast('Carro adicionado à garagem'); setTimeout(function() { window.location.href = '/garagem'; }, 1000); }
-  else toast('Erro ao salvar.', 'erro');
+  withLoading(btn, async function() {
+    var res = await fetch('/api/veiculos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) });
+    var j = await res.json();
+    if (j.ok) { toast('Carro adicionado à garagem'); setTimeout(function() { window.location.href = '/garagem'; }, 1000); }
+    else toast(j.msg || 'Erro ao salvar.', 'erro');
+  });
 }
 </script>
 </body>

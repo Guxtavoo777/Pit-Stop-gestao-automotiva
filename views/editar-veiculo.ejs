@@ -34,12 +34,21 @@
       </div>
     </div>
     <div class="form-group" style="margin-top:16px">
+      <label class="form-label">Foto do veículo</label>
+      <div class="upload-area" id="upload-area" onclick="document.getElementById('ev-foto').click()" style="cursor:pointer;border:2px dashed var(--gray-700);border-radius:10px;padding:18px;text-align:center;transition:border-color .2s">
+        <img id="foto-preview" src="<%= v.foto || v.img || '' %>" alt="Foto" style="max-height:120px;max-width:100%;border-radius:8px;display:<%= (v.foto || v.img) ? 'block' : 'none' %>;margin:0 auto 8px">
+        <div id="foto-label" style="color:var(--gray-400);font-size:.85rem"><%= (v.foto || v.img) ? 'Clique para trocar a foto' : 'Clique para enviar uma foto (JPG, PNG · máx. 5 MB)' %></div>
+        <input type="file" id="ev-foto" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="uploadFoto(this)">
+      </div>
+      <div class="perfil-feedback" id="foto-msg"></div>
+    </div>
+    <div class="form-group" style="margin-top:16px">
       <label class="form-label">Observações</label>
       <textarea class="form-input" id="ev-obs" rows="3" placeholder="Anotações gerais sobre o veículo..."><%= v.observacoes || '' %></textarea>
     </div>
     <div style="display:flex;gap:12px;margin-top:24px">
       <a href="/veiculo/<%= v.id %>" class="btn btn-ghost" style="flex:1">Cancelar</a>
-      <button class="btn btn-primary" style="flex:2" onclick="salvarEdicao()">Salvar alterações</button>
+      <button class="btn btn-primary" style="flex:2" onclick="salvarEdicao(this)">Salvar alterações</button>
     </div>
     <div class="perfil-feedback" id="ev-msg"></div>
   </div>
@@ -65,22 +74,44 @@
 var VID = <%= v.id %>;
 var INATIVO = <%= inativo ? 'true' : 'false' %>;
 
-async function salvarEdicao() {
+async function uploadFoto(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var msg = document.getElementById('foto-msg');
+  var formData = new FormData();
+  formData.append('foto', file);
+  msg.className = 'perfil-feedback'; msg.textContent = 'Enviando...';
+  var res = await fetch('/api/veiculos/' + VID + '/foto', { method: 'POST', body: formData });
+  var j = await res.json();
+  if (j.ok) {
+    document.getElementById('foto-preview').src = j.url;
+    document.getElementById('foto-preview').style.display = 'block';
+    document.getElementById('foto-label').textContent = 'Clique para trocar a foto';
+    msg.className = 'perfil-feedback ok'; msg.textContent = '✓ Foto atualizada!';
+    setTimeout(function() { msg.textContent = ''; }, 3000);
+  } else {
+    msg.className = 'perfil-feedback err'; msg.textContent = '✗ ' + (j.msg || 'Erro ao enviar foto.');
+  }
+}
+
+async function salvarEdicao(btn) {
   var km = document.getElementById('ev-km').value.trim();
   var cor = document.getElementById('ev-cor').value.trim();
   var placa = document.getElementById('ev-placa').value.trim().toUpperCase();
   var obs = document.getElementById('ev-obs').value.trim();
   var msg = document.getElementById('ev-msg');
   if (!km) { msg.className = 'perfil-feedback err'; msg.textContent = '✗ Quilometragem é obrigatória.'; return; }
-  var res = await fetch('/api/veiculos/' + VID, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ km, cor, placa, observacoes: obs }) });
-  var j = await res.json();
-  if (j.ok) {
-    toast('Veículo atualizado');
-    msg.className = 'perfil-feedback ok'; msg.textContent = '✓ Dados salvos com sucesso!';
-    setTimeout(function() { msg.textContent = ''; }, 3000);
-  } else {
-    msg.className = 'perfil-feedback err'; msg.textContent = '✗ Erro ao salvar.';
-  }
+  withLoading(btn, async function() {
+    var res = await fetch('/api/veiculos/' + VID, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ km, cor, placa, observacoes: obs }) });
+    var j = await res.json();
+    if (j.ok) {
+      toast('Veículo atualizado');
+      msg.className = 'perfil-feedback ok'; msg.textContent = '✓ Dados salvos com sucesso!';
+      setTimeout(function() { msg.textContent = ''; }, 3000);
+    } else {
+      msg.className = 'perfil-feedback err'; msg.textContent = '✗ ' + (j.msg || 'Erro ao salvar.');
+    }
+  });
 }
 
 function alterarStatus() {
