@@ -1,0 +1,67 @@
+<%- include('partials/head') %>
+<body>
+<%- include('partials/topnav') %>
+<main class="main">
+
+  <div class="page-header an an-d1">
+    <div>
+      <div class="page-title">Registrar <span>Manutenção</span></div>
+      <div class="page-subtitle"><%= v.modelo %> <%= v.ano %></div>
+    </div>
+    <a href="/veiculo/<%= v.id %>" class="btn btn-ghost">← Voltar</a>
+  </div>
+
+  <div class="form-card an an-d2">
+    <div class="alert" style="margin-bottom:22px">
+      Registrando serviço para <b><%= v.modelo %></b>. Mantenha o histórico completo para alertas automáticos de revisão.
+    </div>
+    <div class="g2">
+      <div class="form-group">
+        <label class="form-label">Tipo de serviço *</label>
+        <select class="form-input" id="tp">
+          <% tipos.forEach(function(t) { %><option><%= t %></option><% }) %>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Oficina / Mecânico</label><input class="form-input" id="of" placeholder="Ex: AutoCenter Brasília"></div>
+      <div class="form-group"><label class="form-label">Data do serviço *</label><input class="form-input" id="dt" type="date"></div>
+      <div class="form-group"><label class="form-label">KM no serviço</label><input class="form-input" id="km" type="number" placeholder="Ex: 45000"></div>
+      <div class="form-group"><label class="form-label">Valor pago (R$)</label><input class="form-input" id="cu" type="number" step="0.01" placeholder="Ex: 350"></div>
+      <div class="form-group"><label class="form-label">Data da próxima revisão</label><input class="form-input" id="pd" type="date"></div>
+      <div class="form-group"><label class="form-label">KM da próxima troca</label><input class="form-input" id="pk" type="number" placeholder="Ex: 50000"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Observações</label><textarea class="form-input" id="de" rows="3" placeholder="Anote qualquer detalhe do serviço..."></textarea></div>
+    <div style="display:flex;gap:12px;margin-top:8px">
+      <a href="/veiculo/<%= v.id %>" class="btn btn-ghost" style="flex:1">Cancelar</a>
+      <button class="btn btn-primary" style="flex:2" onclick="salvar()">Salvar manutenção</button>
+    </div>
+  </div>
+
+</main>
+<%- include('partials/scripts') %>
+<script>
+var VID = <%= v.id %>;
+document.getElementById('dt').valueAsDate = new Date();
+async function salvar() {
+  var d = {
+    tipo: document.getElementById('tp').value,
+    oficina: document.getElementById('of').value,
+    data: document.getElementById('dt').value,
+    km_na_revisao: document.getElementById('km').value,
+    custo: document.getElementById('cu').value || 0,
+    proxima_data: document.getElementById('pd').value || null,
+    proxima_km: document.getElementById('pk').value || null,
+    descricao: document.getElementById('de').value
+  };
+  if (!d.data) { toast('Informe a data do serviço!', 'erro'); return; }
+  var res = await fetch('/api/manut/' + VID, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) });
+  var j = await res.json();
+  if (j.ok) {
+    toast('Manutenção registrada');
+    setTimeout(function() { window.location.href = '/veiculo/' + VID; }, 900);
+  } else {
+    toast('Erro ao salvar.', 'erro');
+  }
+}
+</script>
+</body>
+</html>

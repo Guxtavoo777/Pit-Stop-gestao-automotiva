@@ -1,0 +1,45 @@
+<%- include('partials/head') %>
+<body>
+<%- include('partials/topnav') %>
+<main class="main">
+
+  <div class="page-header an an-d1">
+    <div>
+      <div class="page-title">Locais e <span>Oficinas</span></div>
+      <div class="page-subtitle">Encontre pontos de manutenção parceiros do Pit Stop</div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:12px;margin-bottom:18px" class="an an-d2">
+    <button class="filter-btn active">Todas</button>
+    <button class="filter-btn">Autorizadas</button>
+    <button class="filter-btn">Independentes</button>
+  </div>
+
+  <div class="car-catalog-grid an an-d3">
+    <% OFICINAS.forEach(function(o, i) { %>
+    <div class="catalog-card an an-d<%= Math.min((i % 6) + 1, 6) %>">
+      <div class="catalog-photo" style="height:140px">
+        <img src="<%= o.img %>" alt="<%= o.nome %>" loading="lazy" style="object-position:center">
+        <div class="catalog-photo-overlay"></div>
+        <span class="catalog-category"><%= o.tipo %></span>
+      </div>
+      <div class="catalog-body">
+        <div class="catalog-name" style="font-size:1.1rem"><%= o.nome %></div>
+        <div class="catalog-brand" style="margin-bottom:8px"><%= o.aval %> / 5.0 · <%= o.especialidade %></div>
+        <div style="font-size:0.85rem;color:var(--gray-600);margin-bottom:12px;line-height:1.4">
+          <%= o.ende %><br><span style="color:var(--gray-400)">Aprox. <%= o.dist %></span>
+        </div>
+        <div class="catalog-actions">
+          <a href="#" class="btn btn-outline btn-sm" style="flex:1" onclick="toast('Abrindo Google Maps para rota...'); event.preventDefault();">Ver Rota</a>
+          <button class="btn btn-primary btn-sm" style="flex:1" onclick="toast('Horário <%= o.nome %> solicitado com sucesso!', 'av')">Agendar</button>
+        </div>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+
+</main>
+<%- include('partials/scripts') %>
+</body>
+</html>

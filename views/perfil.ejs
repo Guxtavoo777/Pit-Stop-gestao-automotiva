@@ -1,0 +1,191 @@
+<%- include('partials/head') %>
+<body>
+<%- include('partials/topnav') %>
+<main class="main">
+
+  <div class="page-header an an-d1">
+    <div>
+      <div class="page-title">Meu <span>Perfil</span></div>
+      <div class="page-subtitle">Gerencie seus dados pessoais e senha</div>
+    </div>
+  </div>
+
+  <div class="perfil-layout">
+
+    <div class="perfil-sidebar an an-d2">
+      <div class="perfil-avatar-wrap">
+        <div class="perfil-avatar" id="avatarCircle"><%= ini %></div>
+        <div class="perfil-avatar-name" id="avatarName"><%= nome %></div>
+        <div class="perfil-avatar-user">@<%= user %></div>
+      </div>
+      <div class="perfil-stats">
+        <div class="perfil-stat">
+          <div class="perfil-stat-val"><%= vs.length %></div>
+          <div class="perfil-stat-label">Veículos</div>
+        </div>
+        <div class="perfil-stat">
+          <div class="perfil-stat-val"><%= ms.length %></div>
+          <div class="perfil-stat-label">Manutenções</div>
+        </div>
+        <div class="perfil-stat">
+          <div class="perfil-stat-val"><%= rvs.length %></div>
+          <div class="perfil-stat-label">Revisões</div>
+        </div>
+        <div class="perfil-stat" style="grid-column:1/-1">
+          <div class="perfil-stat-val orange">R$ <%= brl(totalGasto) %></div>
+          <div class="perfil-stat-label">Total investido</div>
+        </div>
+      </div>
+      <a href="/garagem" class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;text-align:center">← Minha Garagem</a>
+    </div>
+
+    <div class="perfil-content">
+
+      <div class="form-card an an-d3">
+        <div class="perfil-section-title">Dados Pessoais</div>
+        <div class="g2" style="margin-top:20px">
+          <div class="form-group">
+            <label class="form-label">Nome completo</label>
+            <input class="form-input" id="pf-nome" placeholder="Ex: João da Silva" value="<%= u.nome || '' %>">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Usuário</label>
+            <input class="form-input" value="<%= user %>" disabled style="opacity:.5;cursor:not-allowed">
+          </div>
+          <div class="form-group">
+            <label class="form-label">E-mail</label>
+            <input class="form-input" id="pf-email" type="email" placeholder="Ex: joao@email.com" value="<%= u.email || '' %>">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Telefone / WhatsApp</label>
+            <input class="form-input" id="pf-tel" placeholder="Ex: (61) 99999-9999" value="<%= u.telefone || '' %>">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cidade / Estado</label>
+            <input class="form-input" id="pf-cidade" placeholder="Ex: Brasília / DF" value="<%= u.cidade || '' %>">
+          </div>
+        </div>
+        <div style="margin-top:24px;display:flex;gap:10px">
+          <button class="btn btn-primary" style="flex:1" onclick="salvarPerfil()">Salvar dados</button>
+        </div>
+        <div class="perfil-feedback" id="pf-msg"></div>
+      </div>
+
+      <div class="form-card an an-d4" style="margin-top:20px">
+        <div class="perfil-section-title">Alterar Senha</div>
+        <div class="g2" style="margin-top:20px">
+          <div class="form-group" style="grid-column:1/-1">
+            <label class="form-label">Senha atual</label>
+            <div class="input-pw-wrap">
+              <input class="form-input" id="pw-atual" type="password" placeholder="Digite sua senha atual" autocomplete="current-password">
+              <button type="button" class="btn-eye" onclick="togglePw('pw-atual',this)" aria-label="Mostrar senha"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg></button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nova senha</label>
+            <div class="input-pw-wrap">
+              <input class="form-input" id="pw-nova" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+              <button type="button" class="btn-eye" onclick="togglePw('pw-nova',this)" aria-label="Mostrar senha"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg></button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirmar nova senha</label>
+            <div class="input-pw-wrap">
+              <input class="form-input" id="pw-conf" type="password" placeholder="Repita a nova senha" autocomplete="new-password">
+              <button type="button" class="btn-eye" onclick="togglePw('pw-conf',this)" aria-label="Mostrar senha"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg></button>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:4px">
+          <div class="pw-strength-bar"><div id="pw-strength-fill"></div></div>
+          <div class="pw-strength-label" id="pw-strength-label"></div>
+        </div>
+        <div style="margin-top:20px;display:flex;gap:10px">
+          <button class="btn btn-primary" style="flex:1" onclick="trocarSenha()">Alterar senha</button>
+        </div>
+        <div class="perfil-feedback" id="pw-msg"></div>
+      </div>
+
+      <div class="form-card an an-d5" style="margin-top:20px;border-color:rgba(229,48,48,.25)">
+        <div class="perfil-section-title" style="color:#E53030">Zona de Perigo</div>
+        <p style="font-size:.88rem;color:var(--gray-400);margin:14px 0 20px;line-height:1.7">Sair da plataforma encerrará sua sessão atual. Todos os seus dados permanecem salvos.</p>
+        <a href="/logout" class="btn btn-danger" style="display:inline-flex;gap:8px;align-items:center">Sair da conta</a>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+<%- include('partials/scripts') %>
+<script>
+var USER = '<%= user %>';
+
+document.getElementById('pw-nova').addEventListener('input', function() {
+  var v = this.value, s = 0;
+  if (v.length >= 6) s++;
+  if (v.length >= 10) s++;
+  if (/[A-Z]/.test(v)) s++;
+  if (/[0-9]/.test(v)) s++;
+  if (/[^A-Za-z0-9]/.test(v)) s++;
+  var fill = document.getElementById('pw-strength-fill');
+  var lbl = document.getElementById('pw-strength-label');
+  var cols = ['', '#E53030', '#E8601C', '#f0b429', '#4caf50', '#2e7d32'];
+  var txts = ['', 'Muito fraca', 'Fraca', 'Média', 'Forte', 'Muito forte'];
+  fill.style.width = (s * 20) + '%';
+  fill.style.background = cols[s] || cols[1];
+  lbl.textContent = txts[s] || '';
+  lbl.style.color = cols[s] || cols[1];
+});
+
+function togglePw(id, btn) {
+  var inp = document.getElementById(id);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.style.opacity = inp.type === 'text' ? '1' : '.6';
+}
+
+async function salvarPerfil() {
+  var d = {
+    nome: document.getElementById('pf-nome').value.trim(),
+    email: document.getElementById('pf-email').value.trim(),
+    telefone: document.getElementById('pf-tel').value.trim(),
+    cidade: document.getElementById('pf-cidade').value.trim()
+  };
+  var msg = document.getElementById('pf-msg');
+  var res = await fetch('/api/perfil', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) });
+  var j = await res.json();
+  if (j.ok) {
+    toast('Perfil atualizado');
+    msg.className = 'perfil-feedback ok'; msg.textContent = '✓ Dados salvos!';
+    var n = d.nome || USER;
+    document.getElementById('avatarCircle').textContent = n.charAt(0).toUpperCase();
+    document.getElementById('avatarName').textContent = n;
+    setTimeout(function() { msg.textContent = ''; }, 3000);
+  } else {
+    msg.className = 'perfil-feedback err'; msg.textContent = '✗ Erro ao salvar.';
+  }
+}
+
+async function trocarSenha() {
+  var atual = document.getElementById('pw-atual').value;
+  var nova = document.getElementById('pw-nova').value;
+  var conf = document.getElementById('pw-conf').value;
+  var msg = document.getElementById('pw-msg');
+  if (!atual || !nova || !conf) { msg.className = 'perfil-feedback err'; msg.textContent = '✗ Preencha todos os campos.'; return; }
+  if (nova !== conf) { msg.className = 'perfil-feedback err'; msg.textContent = '✗ As senhas não conferem.'; return; }
+  if (nova.length < 6) { msg.className = 'perfil-feedback err'; msg.textContent = '✗ A nova senha deve ter pelo menos 6 caracteres.'; return; }
+  var res = await fetch('/api/perfil/senha', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senha_atual: atual, senha_nova: nova }) });
+  var j = await res.json();
+  if (j.ok) {
+    toast('Senha alterada com sucesso');
+    msg.className = 'perfil-feedback ok'; msg.textContent = '✓ Senha alterada!';
+    ['pw-atual', 'pw-nova', 'pw-conf'].forEach(function(id) { document.getElementById(id).value = ''; });
+    document.getElementById('pw-strength-fill').style.width = '0';
+    document.getElementById('pw-strength-label').textContent = '';
+    setTimeout(function() { msg.textContent = ''; }, 3000);
+  } else {
+    msg.className = 'perfil-feedback err'; msg.textContent = '✗ ' + (j.msg || 'Erro ao alterar senha.');
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<%- include('partials/head') %>
+<body>
+<%- include('partials/topnav') %>
+<main class="main">
+
+  <div class="page-header an an-d1">
+    <div>
+      <div class="page-title">Nova <span>Revisão</span></div>
+      <div class="page-subtitle">Preencha o formulário e o checklist de inspeção</div>
+    </div>
+    <a href="/revisoes" class="btn btn-ghost">← Voltar</a>
+  </div>
+
+  <div class="form-card an an-d2" style="max-width:900px">
+    <div class="alert" style="margin-bottom:22px">
+      O laudo de revisão será gerado automaticamente com número único (<b>REV-<%= anoAtual %>-NNN</b>) ao salvar.
+    </div>
+    <div class="section-label">Dados da revisão</div>
+    <div class="g2">
+      <div class="form-group">
+        <label class="form-label">Veículo *</label>
+        <select class="form-input" id="rv_vid">
+          <% vs.forEach(function(v) { %>
+          <option value="<%= v.id %>" <%= v.id === vid ? 'selected' : '' %>><%= v.marca %> <%= v.modelo %> (<%= v.ano %>) — <%= v.placa || 'sem placa' %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tipo de revisão *</label>
+        <select class="form-input" id="rv_tipo">
+          <% tipos.forEach(function(t) { %><option><%= t %></option><% }) %>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Data da revisão *</label><input class="form-input" type="date" id="rv_data"></div>
+      <div class="form-group"><label class="form-label">KM no momento</label><input class="form-input" type="number" id="rv_km" placeholder="Ex: 45000"></div>
+      <div class="form-group"><label class="form-label">Oficina / Centro automotivo</label><input class="form-input" id="rv_oficina" placeholder="Ex: AutoCenter Brasília"></div>
+      <div class="form-group"><label class="form-label">Mecânico responsável</label><input class="form-input" id="rv_mecanico" placeholder="Ex: João Silva"></div>
+      <div class="form-group"><label class="form-label">Valor total (R$)</label><input class="form-input" type="number" step="0.01" id="rv_custo" placeholder="Ex: 890"></div>
+      <div class="form-group"><label class="form-label">Data da próxima revisão</label><input class="form-input" type="date" id="rv_proxdata"></div>
+      <div class="form-group"><label class="form-label">KM da próxima revisão</label><input class="form-input" type="number" id="rv_proxkm" placeholder="Ex: 55000"></div>
+    </div>
+    <div class="form-group" style="grid-column:1/-1"><label class="form-label">Observações gerais</label><textarea class="form-input" id="rv_obs" rows="2" placeholder="Anote qualquer observação sobre o estado do veículo..."></textarea></div>
+    <div class="divider"></div>
+    <div class="section-label">Checklist de inspeção <span style="font-weight:400;font-size:.75rem;color:var(--gray-400);letter-spacing:0">— marque cada item abaixo</span></div>
+    <div id="chk_progress" style="margin-bottom:16px;font-size:.83rem;color:var(--gray-600)">0 / <%= ITENS_CHECKLIST.length %> itens marcados</div>
+    <div class="checklist-grid">
+      <% ITENS_CHECKLIST.forEach(function(item) { %>
+      <div class="checklist-item" id="wrap_<%= item.key %>">
+        <div class="checklist-label"><span class="checklist-icon" id="icon_<%= item.key %>">·</span><%= item.label %></div>
+        <div class="checklist-btns">
+          <button type="button" class="chk-btn chk-aprovado" onclick="setItem('<%= item.key %>','aprovado')">Ok</button>
+          <button type="button" class="chk-btn chk-atencao" onclick="setItem('<%= item.key %>','atencao')">Atenção</button>
+          <button type="button" class="chk-btn chk-skip" onclick="setItem('<%= item.key %>','nao_verificado')">Pular</button>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:28px">
+      <a href="/revisoes" class="btn btn-ghost" style="flex:1">Cancelar</a>
+      <button class="btn btn-primary" style="flex:2" onclick="salvarRev()">Salvar e Gerar Laudo</button>
+    </div>
+  </div>
+
+</main>
+<%- include('partials/scripts') %>
+<script>
+document.getElementById('rv_data').valueAsDate = new Date();
+var ITENS = <%- JSON.stringify(ITENS_CHECKLIST) %>;
+var estado = {};
+for (var i = 0; i < ITENS.length; i++) { estado[ITENS[i].key] = 'nao_verificado'; }
+function setItem(key, val) {
+  estado[key] = val;
+  var wrap = document.getElementById('wrap_' + key);
+  var icon = document.getElementById('icon_' + key);
+  wrap.className = 'checklist-item chk-state-' + val;
+  icon.textContent = val === 'aprovado' ? '✓' : val === 'atencao' ? '!' : '·';
+  atualizarProgresso();
+}
+function atualizarProgresso() {
+  var marcados = Object.values(estado).filter(function(v){ return v !== 'nao_verificado'; }).length;
+  document.getElementById('chk_progress').textContent = marcados + ' / ' + ITENS.length + ' itens marcados';
+}
+async function salvarRev() {
+  var vid = document.getElementById('rv_vid').value;
+  var tipo = document.getElementById('rv_tipo').value;
+  var data = document.getElementById('rv_data').value;
+  if (!vid || !tipo || !data) { toast('Preencha veículo, tipo e data!', 'erro'); return; }
+  var body = {
+    veiculo_id: parseInt(vid),
+    tipo: tipo,
+    data: data,
+    km_na_revisao: document.getElementById('rv_km').value || null,
+    oficina: document.getElementById('rv_oficina').value,
+    mecanico: document.getElementById('rv_mecanico').value,
+    custo: parseFloat(document.getElementById('rv_custo').value) || 0,
+    proxima_data: document.getElementById('rv_proxdata').value || null,
+    proxima_km: document.getElementById('rv_proxkm').value || null,
+    descricao: document.getElementById('rv_obs').value,
+    itens_revisados: estado,
+    status: 'aprovado'
+  };
+  var res = await fetch('/api/revisoes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  var j = await res.json();
+  if (j.ok) {
+    toast('Laudo ' + j.numero_doc + ' gerado');
+    setTimeout(function() { window.location.href = '/revisao/' + j.id + '/documento'; }, 1200);
+  } else {
+    toast('Erro ao salvar.', 'erro');
+  }
+}
+</script>
+</body>
+</html>

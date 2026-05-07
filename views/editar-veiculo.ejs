@@ -1,0 +1,102 @@
+<%- include('partials/head') %>
+<body>
+<%- include('partials/topnav') %>
+<main class="main">
+
+  <div class="page-header an an-d1">
+    <div>
+      <div class="page-title">Editar <span><%= v.modelo %></span></div>
+      <div class="page-subtitle"><%= v.marca %> · <%= v.ano %></div>
+    </div>
+    <a href="/veiculo/<%= v.id %>" class="btn btn-ghost">← Voltar</a>
+  </div>
+
+  <div class="form-card an an-d2">
+
+    <div class="alert" style="margin-bottom:22px;background:rgba(232,96,28,.06);border-color:rgba(232,96,28,.2)">
+      <b><%= v.marca %> <%= v.modelo %> <%= v.ano %></b> · Motor: <%= v.motor || '—' %> · <%= v.potencia || '—' %>
+      <br><small style="color:var(--gray-400);margin-top:4px;display:block">Os dados técnicos (motor, câmbio, etc.) são fixos do catálogo. Você pode editar os seus dados operacionais abaixo.</small>
+    </div>
+
+    <div class="perfil-section-title">Dados Operacionais</div>
+    <div class="g2" style="margin-top:20px">
+      <div class="form-group">
+        <label class="form-label">Quilometragem atual *</label>
+        <input class="form-input" id="ev-km" type="number" value="<%= v.km || '' %>" placeholder="Ex: 45000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cor</label>
+        <input class="form-input" id="ev-cor" value="<%= v.cor || '' %>" placeholder="Ex: Branco Pérola">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Placa</label>
+        <input class="form-input" id="ev-placa" value="<%= v.placa || '' %>" placeholder="Ex: ABC-1234" style="text-transform:uppercase">
+      </div>
+    </div>
+    <div class="form-group" style="margin-top:16px">
+      <label class="form-label">Observações</label>
+      <textarea class="form-input" id="ev-obs" rows="3" placeholder="Anotações gerais sobre o veículo..."><%= v.observacoes || '' %></textarea>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:24px">
+      <a href="/veiculo/<%= v.id %>" class="btn btn-ghost" style="flex:1">Cancelar</a>
+      <button class="btn btn-primary" style="flex:2" onclick="salvarEdicao()">Salvar alterações</button>
+    </div>
+    <div class="perfil-feedback" id="ev-msg"></div>
+  </div>
+
+  <div class="form-card an an-d3" style="margin-top:20px;border-color:<%= inativo ? 'rgba(76,175,80,.25)' : 'rgba(229,48,48,.2)' %>">
+    <div class="perfil-section-title" style="color:<%= inativo ? '#4caf50' : '#E53030' %>"><%= inativo ? 'Reativar Veículo' : 'Inativar Veículo' %></div>
+    <p style="font-size:.88rem;color:var(--gray-400);margin:14px 0 20px;line-height:1.7">
+      <% if (inativo) { %>
+        Este veículo está <b>inativo</b> e não aparece nos alertas e contagens principais. Reative-o para voltar ao normal.
+      <% } else { %>
+        Inativar o veículo oculta-o da contagem principal e de alertas. O histórico de manutenções é preservado. Útil para veículos vendidos ou temporariamente fora de uso.
+      <% } %>
+    </p>
+    <button class="btn <%= inativo ? 'btn-primary' : 'btn-danger' %>" onclick="alterarStatus()" id="btn-status">
+      <%= inativo ? 'Reativar veículo' : 'Inativar veículo' %>
+    </button>
+    <div class="perfil-feedback" id="st-msg"></div>
+  </div>
+
+</main>
+<%- include('partials/scripts') %>
+<script>
+var VID = <%= v.id %>;
+var INATIVO = <%= inativo ? 'true' : 'false' %>;
+
+async function salvarEdicao() {
+  var km = document.getElementById('ev-km').value.trim();
+  var cor = document.getElementById('ev-cor').value.trim();
+  var placa = document.getElementById('ev-placa').value.trim().toUpperCase();
+  var obs = document.getElementById('ev-obs').value.trim();
+  var msg = document.getElementById('ev-msg');
+  if (!km) { msg.className = 'perfil-feedback err'; msg.textContent = '✗ Quilometragem é obrigatória.'; return; }
+  var res = await fetch('/api/veiculos/' + VID, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ km, cor, placa, observacoes: obs }) });
+  var j = await res.json();
+  if (j.ok) {
+    toast('Veículo atualizado');
+    msg.className = 'perfil-feedback ok'; msg.textContent = '✓ Dados salvos com sucesso!';
+    setTimeout(function() { msg.textContent = ''; }, 3000);
+  } else {
+    msg.className = 'perfil-feedback err'; msg.textContent = '✗ Erro ao salvar.';
+  }
+}
+
+function alterarStatus() {
+  var confirmMsg = INATIVO ? 'Deseja reativar este veículo?' : 'Deseja inativar este veículo? O histórico será preservado.';
+  confirmDialog(confirmMsg, async function() {
+    var res = await fetch('/api/veiculos/' + VID + '/status', { method: 'PATCH' });
+    var j = await res.json();
+    if (j.ok) {
+      toast(j.ativo === false ? 'Veículo inativado' : 'Veículo reativado', 'av');
+      setTimeout(function() { window.location.href = '/garagem'; }, 1000);
+    } else {
+      document.getElementById('st-msg').className = 'perfil-feedback err';
+      document.getElementById('st-msg').textContent = '✗ Erro ao alterar status.';
+    }
+  });
+}
+</script>
+</body>
+</html>

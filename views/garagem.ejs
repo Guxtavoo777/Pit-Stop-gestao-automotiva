@@ -1,0 +1,103 @@
+<%- include('partials/head') %>
+<body>
+<%- include('partials/topnav') %>
+<main class="main">
+
+  <div class="page-header an an-d1">
+    <div>
+      <div class="page-title">Minha <span>Garagem</span></div>
+      <div class="page-subtitle"><%= vsAtivos.length %> ativo(s) · <%= vsInativos.length %> inativo(s)</div>
+    </div>
+    <a href="/cadastro" class="btn btn-primary">+ Adicionar carro</a>
+  </div>
+
+  <div class="cars-grid">
+    <% if (vsAtivos.length) { %>
+      <% vsAtivos.forEach(function(v, i) { %>
+      <% var s = situacao(v.id); var c = gastos(v.id); %>
+      <% var sitCls = s.tipo === 'ok' ? 's-ok' : s.tipo === 'critico' ? 's-cr' : 's-av'; %>
+      <div onclick="window.location.href='/veiculo/<%= v.id %>'" style="cursor:pointer" class="car-card an an-d<%= Math.min(i + 2, 6) %>">
+        <div class="car-photo">
+          <img src="<%= v.img %>" alt="<%= v.modelo %>" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=900&auto=format'">
+          <div class="car-photo-overlay"></div>
+          <span class="tag-brand"><%= v.marca %></span>
+          <span class="tag-status <%= sitCls %>"><%= s.texto %></span>
+        </div>
+        <div class="car-body">
+          <div class="car-name"><%= v.modelo %></div>
+          <div class="car-info"><%= v.ano %><%= v.cor ? ' · ' + v.cor : '' %><%= v.motor ? ' · ' + v.motor : '' %></div>
+          <div class="car-specs">
+            <div><div class="spec-row-label">Quilometragem</div><div class="spec-row-value"><%= Number(v.km).toLocaleString('pt-BR') %> km</div></div>
+            <div><div class="spec-row-label">Placa</div><div class="spec-row-value"><%= v.placa || '—' %></div></div>
+            <div><div class="spec-row-label">Total Gasto</div><div class="spec-row-value" style="color:var(--or)">R$ <%= brl(c) %></div></div>
+            <div><div class="spec-row-label">Potência</div><div class="spec-row-value"><%= v.potencia || '—' %></div></div>
+          </div>
+          <div class="car-actions" onclick="event.stopPropagation()">
+            <a href="/veiculo/<%= v.id %>" class="btn btn-primary" style="flex:1">Ver detalhes</a>
+            <a href="/editar-veiculo/<%= v.id %>" class="btn btn-ghost btn-sm" title="Editar veículo"><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></a>
+            <button class="btn btn-ghost btn-sm" title="Inativar veículo" onclick="toggleStatus(event,<%= v.id %>,this)">Pausar</button>
+          </div>
+        </div>
+      </div>
+      <% }) %>
+    <% } else { %>
+      <div class="empty-state">
+        <div class="empty-state-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0zM1 1h4l2.68 13.39a2 2 0 001.98 1.61h9.72a2 2 0 001.98-1.68L23 6H6"/></svg></div>
+        <div class="empty-state-title">Garagem vazia</div>
+        <div class="empty-state-sub">Você ainda não cadastrou nenhum veículo. Adicione seu primeiro carro para começar.</div>
+        <a href="/cadastro" class="btn btn-primary">+ Adicionar meu primeiro carro</a>
+      </div>
+    <% } %>
+  </div>
+
+  <% if (vsInativos.length) { %>
+  <div class="section-label" style="margin-top:32px;margin-bottom:16px">Veículos Inativos (<%= vsInativos.length %>)</div>
+  <div class="cars-grid">
+    <% vsInativos.forEach(function(v, i) { %>
+    <% var s = situacao(v.id); var c = gastos(v.id); %>
+    <div onclick="window.location.href='/veiculo/<%= v.id %>'" style="cursor:pointer;opacity:.65;filter:grayscale(.6)" class="car-card an an-d<%= Math.min(i + 2, 6) %>">
+      <div class="car-photo">
+        <img src="<%= v.img %>" alt="<%= v.modelo %>" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=900&auto=format'">
+        <div class="car-photo-overlay"></div>
+        <span class="tag-brand"><%= v.marca %></span>
+        <span class="tag-status" style="background:rgba(100,100,100,.85);color:#fff;position:absolute;top:44px;right:10px">Inativo</span>
+      </div>
+      <div class="car-body">
+        <div class="car-name"><%= v.modelo %></div>
+        <div class="car-info"><%= v.ano %><%= v.cor ? ' · ' + v.cor : '' %><%= v.motor ? ' · ' + v.motor : '' %></div>
+        <div class="car-specs">
+          <div><div class="spec-row-label">Quilometragem</div><div class="spec-row-value"><%= Number(v.km).toLocaleString('pt-BR') %> km</div></div>
+          <div><div class="spec-row-label">Placa</div><div class="spec-row-value"><%= v.placa || '—' %></div></div>
+          <div><div class="spec-row-label">Total Gasto</div><div class="spec-row-value" style="color:var(--or)">R$ <%= brl(c) %></div></div>
+          <div><div class="spec-row-label">Potência</div><div class="spec-row-value"><%= v.potencia || '—' %></div></div>
+        </div>
+        <div class="car-actions" onclick="event.stopPropagation()">
+          <a href="/veiculo/<%= v.id %>" class="btn btn-primary" style="flex:1">Ver detalhes</a>
+          <a href="/editar-veiculo/<%= v.id %>" class="btn btn-ghost btn-sm" title="Editar veículo"><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></a>
+          <button class="btn btn-ghost btn-sm" title="Reativar veículo" onclick="toggleStatus(event,<%= v.id %>,this)">Ativar</button>
+        </div>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+  <% } %>
+
+</main>
+<%- include('partials/scripts') %>
+<script>
+async function toggleStatus(e, id, btn) {
+  e.stopPropagation();
+  confirmDialog('Deseja alterar o status deste veículo?', async function() {
+    var res = await fetch('/api/veiculos/' + id + '/status', { method: 'PATCH' });
+    var j = await res.json();
+    if (j.ok) {
+      toast(j.ativo === false ? 'Veículo inativado' : 'Veículo reativado', 'av');
+      setTimeout(function() { location.reload(); }, 900);
+    } else {
+      toast('Erro ao alterar status.', 'erro');
+    }
+  });
+}
+</script>
+</body>
+</html>
