@@ -1,0 +1,106 @@
+<%- include('partials/head') %>
+<body>
+<%- include('partials/topnav') %>
+<main class="main">
+
+  <div class="hero an an-d1">
+    <img class="hero-bg" src="<%= heroImg %>" alt="<%= heroModel %>" onerror="this.src='https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=1400&auto=format'">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-label">Bem-vindo ao Pit Stop</div>
+      <div class="hero-title"><%= heroModel %></div>
+      <div class="hero-sub"><%= heroBrand %> · Sua garagem digital</div>
+      <div style="display:flex;gap:10px;margin-top:22px;flex-wrap:wrap">
+        <a href="/garagem" class="btn btn-primary">Minha Garagem →</a>
+        <a href="/explorar" class="btn btn-dark" style="border:1.5px solid rgba(255,255,255,.2)">Explorar Carros BR</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="g4 an an-d2">
+    <div class="stat-card"><div class="stat-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0zM1 1h4l2.68 13.39a2 2 0 001.98 1.61h9.72a2 2 0 001.98-1.68L23 6H6"/></svg></div><div class="stat-label">Veículos</div><div class="stat-value orange"><%= vs.length %></div><div class="stat-detail">na garagem</div></div>
+    <div class="stat-card"><div class="stat-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div><div class="stat-label">Manutenções</div><div class="stat-value blue"><%= ms.length %></div><div class="stat-detail">registradas</div></div>
+    <div class="stat-card"><div class="stat-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1.5"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v2m0 8v2M9.5 9a2.5 2.5 0 015 0c0 1.5-1 2.5-2.5 3v1m0 2h.01"/></svg></div><div class="stat-label">Total investido</div><div class="stat-value orange">R$ <%= brl(totalGasto) %></div><div class="stat-detail">em serviços</div></div>
+    <div class="stat-card"><div class="stat-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4m0 4h.01"/></svg></div><div class="stat-label">Alertas</div><div class="stat-value <%= alertas.length ? 'red' : 'green' %>"><%= alertas.length %></div><div class="stat-detail">pendentes</div></div>
+  </div>
+
+  <% if (alertas.length) { %>
+  <div class="section-label an an-d3">Alertas de manutenção</div>
+  <div style="margin-bottom:26px" class="an an-d4">
+    <% alertas.forEach(function(v) { var s = situacao(v.id); %>
+    <div class="alert<%= s.tipo === 'critico' ? ' critical' : '' %>">
+      <span style="width:10px;height:10px;border-radius:50%;background:<%= s.tipo === 'critico' ? 'var(--cr)' : 'var(--or)' %>;display:inline-block;flex-shrink:0"></span>
+      <div style="flex:1"><b><%= v.modelo %></b> — <%= s.texto %><br>
+        <span style="font-size:.78rem;color:var(--gray-600)"><%= v.placa ? 'Placa: ' + v.placa : '' %></span></div>
+      <a href="/veiculo/<%= v.id %>" class="btn btn-sm btn-outline">Ver detalhes</a>
+    </div>
+    <% }) %>
+  </div>
+  <% } %>
+
+  <div class="gchart an an-d4">
+    <div class="chart-card"><div class="section-label">Gastos por mês</div><canvas id="gc" height="130"></canvas></div>
+    <div class="chart-card" style="display:flex;flex-direction:column;gap:10px">
+      <div class="section-label">Meus veículos</div>
+      <% if (vs.length) { %>
+        <% vs.forEach(function(v) { %>
+        <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--gray-50);border-radius:var(--r-sm)">
+          <img src="<%= v.img %>" style="width:60px;height:40px;object-fit:cover;border-radius:4px" onerror="this.src='https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=200&auto=format'">
+          <div style="flex:1"><div style="font-weight:700;font-size:.92rem"><%= v.modelo %></div><div style="color:var(--gray-400);font-size:.78rem"><%= v.marca %> · <%= v.ano %></div></div>
+          <a href="/veiculo/<%= v.id %>" class="btn btn-sm btn-ghost">→</a>
+        </div>
+        <% }) %>
+      <% } else { %>
+        <div class="no-items">Nenhum veículo. <a href="/cadastro">Adicionar</a></div>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="section-label an an-d5">Carros em destaque no Brasil</div>
+  <div class="cars-grid an an-d6" style="margin-bottom:10px">
+    <% featuredCars.forEach(function(c, i) { %>
+    <a href="/explorar" class="car-card an an-d<%= Math.min(i + 3, 6) %>" style="text-decoration:none">
+      <div class="car-photo">
+        <img src="<%= c.img %>" alt="<%= c.modelo %>" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=900&auto=format'">
+        <div class="car-photo-overlay"></div>
+        <span class="tag-brand"><%= c.marca %></span>
+      </div>
+      <div class="car-body">
+        <div class="car-name"><%= c.modelo %></div>
+        <div class="car-info"><%= c.motor %> · <%= c.potencia %></div>
+        <div style="margin-top:10px;font-weight:800;color:var(--or)"><%= c.preco_base %></div>
+      </div>
+    </a>
+    <% }) %>
+  </div>
+  <div style="text-align:right;margin-bottom:10px"><a href="/explorar" class="btn btn-ghost btn-sm">Ver todos os 27 modelos →</a></div>
+
+</main>
+<%- include('partials/scripts') %>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+var gc = document.getElementById('gc');
+if (gc) new Chart(gc, {
+  type: 'bar',
+  data: {
+    labels: <%- JSON.stringify(meses) %>,
+    datasets: [{
+      label: 'R$',
+      data: <%- JSON.stringify(meses.map(function(m){ return mmap[m]; })) %>,
+      backgroundColor: 'rgba(232,96,28,.8)',
+      borderRadius: 5,
+      borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#9a9a9a' } },
+      y: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { color: '#9a9a9a', callback: function(v){ return 'R$' + v; } } }
+    }
+  }
+});
+</script>
+</body>
+</html>

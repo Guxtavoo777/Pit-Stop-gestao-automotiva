@@ -1,0 +1,87 @@
+<%- include('partials/head') %>
+<body>
+<%- include('partials/topnav') %>
+<main class="main">
+
+  <div class="page-header an an-d1">
+    <div>
+      <div class="page-title">Revisões <span>Digitais</span></div>
+      <div class="page-subtitle"><%= revs.length %> revisão(ões) registrada(s) em <%= vs.length %> veículo(s)</div>
+    </div>
+    <a href="/revisao/nova" class="btn btn-primary">+ Nova Revisão</a>
+  </div>
+
+  <div class="g4 an an-d2">
+    <div class="stat-card"><div class="stat-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div><div class="stat-label">Total de Revisões</div><div class="stat-value blue"><%= revs.length %></div><div class="stat-detail">documentos emitidos</div></div>
+    <div class="stat-card"><div class="stat-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div class="stat-label">Em dia</div><div class="stat-value green"><%= revs.length - atrasadas - proximas %></div><div class="stat-detail">revisões ok</div></div>
+    <div class="stat-card"><div class="stat-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4m0 4h.01"/></svg></div><div class="stat-label">Atrasadas</div><div class="stat-value <%= atrasadas ? 'red' : 'green' %>"><%= atrasadas %></div><div class="stat-detail">precisam de atenção</div></div>
+    <div class="stat-card"><div class="stat-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="1.5"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v2m0 8v2M9.5 9a2.5 2.5 0 015 0c0 1.5-1 2.5-2.5 3v1m0 2h.01"/></svg></div><div class="stat-label">Total investido</div><div class="stat-value orange">R$ <%= brl(totCusto) %></div><div class="stat-detail">em revisões</div></div>
+  </div>
+
+  <div class="section-label an an-d3">Histórico de revisões</div>
+  <div class="rev-timeline an an-d4">
+    <% if (revs.length) { %>
+      <% revs.forEach(function(rv, i) { %>
+      <% var v = vsMap[rv.veiculo_id] || {}; %>
+      <% var s = situacaoRev(rv); %>
+      <% var sitCls = s.tipo === 'ok' ? 'rev-ok' : s.tipo === 'critico' ? 'rev-cr' : 'rev-av'; %>
+      <% var itens = rv.itens_revisados || {}; %>
+      <% var total = Object.keys(itens).length; %>
+      <% var aprovados = Object.values(itens).filter(function(x){ return x === 'aprovado'; }).length; %>
+      <% var atencoes = Object.values(itens).filter(function(x){ return x === 'atencao'; }).length; %>
+      <div class="rev-timeline-item an an-d<%= Math.min(i + 2, 6) %>">
+        <div class="rev-timeline-dot <%= sitCls %>-dot"></div>
+        <div class="rev-card">
+          <div class="rev-card-header">
+            <div>
+              <div class="rev-doc-num"><%= rv.numero_doc %></div>
+              <div class="rev-card-title"><%= rv.tipo %></div>
+              <div class="rev-card-sub"><%= v.modelo || '—' %> · <%= v.placa || '—' %> · <%= rv.data %></div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+              <span class="rev-status <%= sitCls %>"><%= s.texto %></span>
+              <div style="font-size:.82rem;color:var(--gray-600)">Oficina: <b><%= rv.oficina || '—' %></b></div>
+            </div>
+          </div>
+          <div class="rev-card-body">
+            <div class="rev-mini-stats">
+              <div><span class="rev-mini-val" style="color:var(--ok)"><%= aprovados %></span><span class="rev-mini-label">Aprovados</span></div>
+              <div><span class="rev-mini-val" style="color:var(--av)"><%= atencoes %></span><span class="rev-mini-label">Atenção</span></div>
+              <div><span class="rev-mini-val" style="color:var(--or)"><%= total > 0 ? Math.round(aprovados / total * 100) : 0 %>%</span><span class="rev-mini-label">Saúde</span></div>
+              <div><span class="rev-mini-val"><%= rv.km_na_revisao ? Number(rv.km_na_revisao).toLocaleString('pt-BR') + ' km' : '—' %></span><span class="rev-mini-label">KM</span></div>
+              <div><span class="rev-mini-val" style="color:var(--or)">R$ <%= brl(rv.custo) %></span><span class="rev-mini-label">Custo</span></div>
+            </div>
+            <div class="rev-card-actions">
+              <a href="/revisao/<%= rv.id %>/documento" class="btn btn-outline btn-sm">Ver Laudo</a>
+              <button class="btn btn-danger btn-sm" onclick="removerRev(<%= rv.id %>)">Remover</button>
+            </div>
+          </div>
+          <% if (rv.proxima_data) { %>
+          <div class="rev-proxima">Próxima revisão: <b><%= rv.proxima_data %></b><% if (rv.proxima_km) { %> · KM: <b><%= Number(rv.proxima_km).toLocaleString('pt-BR') %></b><% } %></div>
+          <% } %>
+        </div>
+      </div>
+      <% }) %>
+    <% } else { %>
+      <div class="empty-state">
+        <div class="empty-state-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>
+        <div class="empty-state-title">Nenhuma revisão registrada</div>
+        <div class="empty-state-sub">Registre a primeira revisão digital de um dos seus veículos para acompanhar o histórico de manutenção.</div>
+        <a href="/revisao/nova" class="btn btn-primary">+ Registrar primeira revisão</a>
+      </div>
+    <% } %>
+  </div>
+
+</main>
+<%- include('partials/scripts') %>
+<script>
+function removerRev(id) {
+  confirmDialog('Remover esta revisão?', async function() {
+    await fetch('/api/revisoes/' + id, { method: 'DELETE' });
+    toast('Revisão removida', 'av');
+    setTimeout(function() { location.reload(); }, 900);
+  });
+}
+</script>
+</body>
+</html>

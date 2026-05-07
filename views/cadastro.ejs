@@ -1,0 +1,85 @@
+<%- include('partials/head') %>
+<body>
+<%- include('partials/topnav') %>
+<main class="main">
+
+  <div class="page-header an an-d1">
+    <div>
+      <div class="page-title">Adicionar <span>Carro</span></div>
+      <div class="page-subtitle">Busque o modelo para preencher automaticamente</div>
+    </div>
+  </div>
+
+  <div class="form-card an an-d2">
+    <div class="form-group">
+      <label class="form-label" style="color:var(--or)">Passo 1 — Busque o modelo</label>
+      <div class="search-input-wrap">
+        <svg class="search-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input class="search-input" id="bc" placeholder="Digite: Onix, Polo, HB20, Tracker...">
+      </div>
+      <p class="search-info" id="bi">Digite 2 ou mais letras para ver os modelos</p>
+      <div class="search-results" id="bg" style="display:none"></div>
+    </div>
+    <div class="specs-preview" id="sb2">
+      <div class="specs-preview-title">Selecionado <button onclick="limpar()" class="btn btn-ghost btn-sm">Limpar</button></div>
+      <div class="specs-grid3" id="sg"></div>
+    </div>
+    <div class="divider"></div>
+    <p class="form-label">Passo 2 — Seus dados</p>
+    <div class="g2">
+      <div class="form-group"><label class="form-label">Quilometragem atual *</label><input class="form-input" id="fk" type="number" placeholder="Ex: 25000"></div>
+      <div class="form-group"><label class="form-label">Cor</label><input class="form-input" id="fc" placeholder="Ex: Branco Pérola"></div>
+      <div class="form-group"><label class="form-label">Placa</label><input class="form-input" id="fp" placeholder="Ex: ABC-1234"></div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:24px">
+      <a href="/garagem" class="btn btn-ghost" style="flex:1">Cancelar</a>
+      <button class="btn btn-primary" style="flex:2" onclick="salvar()">Salvar na garagem</button>
+    </div>
+  </div>
+
+</main>
+<%- include('partials/scripts') %>
+<script>
+var B = <%- JSON.stringify(CARROS) %>, RES = [], SEL = null;
+var bc = document.getElementById('bc'), bg = document.getElementById('bg'), bi = document.getElementById('bi');
+bc.addEventListener('input', function() {
+  var q = this.value.trim().toLowerCase(); bg.style.display = 'none'; bg.innerHTML = '';
+  if (q.length < 2) { bi.textContent = 'Digite 2 ou mais letras para ver os modelos'; return; }
+  RES = B.filter(function(c) { return (c.marca + ' ' + c.modelo).toLowerCase().indexOf(q) >= 0; }).slice(0, 12);
+  if (RES.length === 0) { bi.textContent = 'Modelo não encontrado. Preencha manualmente abaixo.'; return; }
+  bi.textContent = RES.length + ' modelo(s) — clique para selecionar:';
+  var h = '';
+  for (var i = 0; i < RES.length; i++) {
+    h += '<button type="button" class="car-option-btn" id="cb' + i + '" onclick="escolher(' + i + ')">' +
+      '<img class="car-option-img" src="' + RES[i].img + '" alt="' + RES[i].modelo + '" onerror="this.src=\'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=400&auto=format\'">' +
+      '<div class="car-option-info"><div class="car-option-name">' + RES[i].marca + ' ' + RES[i].modelo + '</div><div class="car-option-motor">' + (RES[i].motor || '') + '</div><span class="pill pill-orange" style="margin-top:5px;display:inline-block">' + (RES[i].categoria || '') + '</span></div></button>';
+  }
+  bg.innerHTML = h; bg.style.display = 'grid';
+});
+function escolher(i) {
+  SEL = RES[i];
+  for (var k = 0; k < RES.length; k++) { var el = document.getElementById('cb' + k); if (el) el.classList.remove('selected'); }
+  var el2 = document.getElementById('cb' + i); if (el2) el2.classList.add('selected');
+  document.getElementById('fk').focus();
+  var info = [['Motor', SEL.motor], ['Potência', SEL.potencia], ['Torque', SEL.torque], ['Câmbio', SEL.cambio], ['Tração', SEL.tracao], ['Combustível', SEL.combustivel], ['Consumo cidade', SEL.consumo_cidade], ['Consumo estrada', SEL.consumo_estrada], ['Porta-malas', SEL.porta_malas], ['Preço base', SEL.preco_base]];
+  var sg = ''; for (var j = 0; j < info.length; j++) { if (info[j][1]) sg += '<div><div class="sp-r">' + info[j][0] + '</div><div class="sp-v">' + info[j][1] + '</div></div>'; }
+  document.getElementById('sg').innerHTML = sg; document.getElementById('sb2').classList.add('visible');
+  toast(SEL.marca + ' ' + SEL.modelo + ' selecionado');
+}
+function limpar() {
+  bc.value = ''; bg.style.display = 'none'; bg.innerHTML = ''; document.getElementById('sb2').classList.remove('visible');
+  bi.textContent = 'Digite 2 ou mais letras para ver os modelos'; SEL = null; RES = [];
+  ['fk', 'fc', 'fp'].forEach(function(id) { document.getElementById(id).value = ''; });
+}
+async function salvar() {
+  if (!SEL) { toast('Primeiro busque e selecione o modelo no Passo 1!', 'erro'); return; }
+  var d = Object.assign({}, SEL, { km: document.getElementById('fk').value.trim(), cor: document.getElementById('fc').value.trim(), placa: document.getElementById('fp').value.trim() });
+  if (!d.km) { toast('Preencha a Quilometragem para continuar!', 'erro'); return; }
+  var res = await fetch('/api/veiculos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) });
+  var j = await res.json();
+  if (j.ok) { toast('Carro adicionado à garagem'); setTimeout(function() { window.location.href = '/garagem'; }, 1000); }
+  else toast('Erro ao salvar.', 'erro');
+}
+</script>
+</body>
+</html>

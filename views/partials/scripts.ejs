@@ -1,0 +1,16 @@
+<div id="toasts"></div>
+<div class="confirm-overlay" id="confirmModal" style="display:none" onclick="if(event.target===this)_confirmCancel()">
+  <div class="confirm-dialog">
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" onclick="_confirmCancel()">Cancelar</button>
+      <button class="btn btn-danger" id="confirmOkBtn">Confirmar</button>
+    </div>
+  </div>
+</div>
+<script src="/main.js?v=4"></script>
+<script>
+function toggleMobile() {
+  document.getElementById('mobileMenu').classList.toggle('open');
+}
+</script>
