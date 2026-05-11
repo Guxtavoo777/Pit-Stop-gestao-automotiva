@@ -14,6 +14,7 @@ yarn-error.log*
 *.db
 *.db-shm
 *.db-wal
+db.json
 
 # ─── Config local Claude ──────────────────────────────────────────────────────
 .claude/settings.local.json
