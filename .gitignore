@@ -31,3 +31,6 @@ desktop.ini
 dist/
 build/
 *.log
+
+# ─── Scripts de utilitários (não fazem parte do projeto) ─────────────────────
+docs/screenshots/capture.js

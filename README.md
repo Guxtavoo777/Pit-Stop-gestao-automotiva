@@ -10,13 +10,13 @@ Plataforma web para gerenciamento de veículos, manutenções e revisões. Const
 
 ## Screenshots
 
-| Login | Dashboard |
-|-------|-----------|
-| ![Login](docs/screenshots/login.png) | ![Dashboard](docs/screenshots/dashboard.png) |
+| Home | Login |
+|------|-------|
+| ![Home](docs/screenshots/home.png) | ![Login](docs/screenshots/login.png) |
 
-| Cadastro de Veículo | Histórico de Manutenções |
-|--------------------|--------------------------|
-| ![Veículo](docs/screenshots/veiculo.png) | ![Manutenções](docs/screenshots/manutencoes.png) |
+| Dashboard | Garagem |
+|-----------|---------|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Garagem](docs/screenshots/garagem.png) |
 
 ---
 
