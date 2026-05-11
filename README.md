@@ -8,6 +8,18 @@ Plataforma web para gerenciamento de veículos, manutenções e revisões. Const
 
 ---
 
+## Screenshots
+
+| Login | Dashboard |
+|-------|-----------|
+| ![Login](docs/screenshots/login.png) | ![Dashboard](docs/screenshots/dashboard.png) |
+
+| Cadastro de Veículo | Histórico de Manutenções |
+|--------------------|--------------------------|
+| ![Veículo](docs/screenshots/veiculo.png) | ![Manutenções](docs/screenshots/manutencoes.png) |
+
+---
+
 ## Funcionalidades
 
 - **Garagem digital** — cadastre veículos com dados do catálogo (27 modelos), fotos e KM atual
@@ -78,7 +90,17 @@ Na primeira execução o banco `pitstop.db` é criado automaticamente com dados 
 npm test
 ```
 
-Cobre: autenticação com credenciais inválidas (401/400), rotas protegidas sem sessão (302/401).
+**44 testes** cobrindo:
+
+| Grupo | O que é testado |
+|-------|----------------|
+| Autenticação | Login inválido (401/400), cadastro duplicado (409), logout |
+| Rotas protegidas | Redirect/401 sem sessão para todas as rotas privadas |
+| CRUD de Veículos | Criar, listar, atualizar, alternar status, excluir |
+| Manutenções | Criar e excluir registros por veículo |
+| Páginas EJS | Dashboard, perfil, 404 renderizam com status correto |
+| `gastos()` | Soma de custos, tratamento de nulos |
+| `situacao()` | `ok`, `aviso` (≤30 dias) e `critico` (atrasado), prioridade entre estados |
 
 ---
 
@@ -110,12 +132,20 @@ pit-stop/
 
 ## Deploy (Railway)
 
-1. Faça o push do código para o GitHub
-2. Crie um projeto no [Railway](https://railway.app) apontando para o repositório
-3. Adicione a variável `SESSION_SECRET` no painel de variáveis
-4. O Railway detecta automaticamente `npm start` via `package.json`
+O projeto inclui `Dockerfile` e `railway.json` prontos para uso:
 
-> O `pitstop.db` é recriado a cada deploy efêmero. Para persistência em produção, use um volume Railway montado em `/app` ou migre para PostgreSQL com `better-sqlite3` trocado por `pg`.
+1. Faça push do código para o GitHub
+2. Crie um **novo projeto** em [railway.app](https://railway.app) → *Deploy from GitHub repo*
+3. Selecione este repositório — Railway detecta o `Dockerfile` automaticamente
+4. Em **Variables**, adicione:
+   - `SESSION_SECRET` → string longa aleatória (ex.: resultado de `openssl rand -hex 32`)
+   - `NODE_ENV` → `production`
+5. Clique em **Deploy** — o app ficará disponível em `https://<projeto>.up.railway.app`
+
+O endpoint `/health` é monitorado pelo Railway para verificar se o serviço está saudável.  
+Na primeira inicialização o banco SQLite é criado automaticamente com o usuário demo `aluno / senha123`.
+
+> **Persistência:** o SQLite é reiniciado a cada novo deploy. Para dados persistentes, configure um **Volume** Railway montado em `/app` ou migre para PostgreSQL.
 
 ---
 

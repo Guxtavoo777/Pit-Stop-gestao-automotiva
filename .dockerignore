@@ -7,3 +7,7 @@ npm-debug.log*
 README.md
 .DS_Store
 Thumbs.db
+*.db
+tests/
+.github/
+.claude/

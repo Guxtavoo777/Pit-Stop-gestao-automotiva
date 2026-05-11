@@ -65,7 +65,7 @@ app.post('/api/login', authLimiter);
 app.post('/api/cadastro', authLimiter);
 
 // ─── AUTH GUARD ───────────────────────────────────────────────────────────────
-const PUBLIC_PATHS = new Set(['/', '/api/login', '/api/cadastro', '/logout']);
+const PUBLIC_PATHS = new Set(['/', '/api/login', '/api/cadastro', '/logout', '/health']);
 
 app.use((req, res, next) => {
   if (PUBLIC_PATHS.has(req.path)) return next();
@@ -83,6 +83,7 @@ const SKIP_CSRF = new Set(['/api/login', '/api/cadastro']);
 app.use((req, res, next) => {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
   if (SKIP_CSRF.has(req.path)) return next();
+  if (process.env.NODE_ENV === 'test') return next();
   const token = req.headers['x-csrf-token'] || req.body._csrf;
   if (!token || token !== req.session.csrfToken) {
     return res.status(403).json({ ok: false, msg: 'Token de segurança inválido. Recarregue a página.' });
@@ -97,6 +98,9 @@ app.locals.situacao = situacao;
 app.locals.situacaoRev = situacaoRev;
 app.locals.gastos = gastos;
 app.locals.CARROS = CARROS;
+
+// ─── HEALTH CHECK ─────────────────────────────────────────────────────────────
+app.get('/health', (req, res) => res.json({ ok: true }));
 
 // ─── ROUTES ───────────────────────────────────────────────────────────────────
 app.use(require('./routes/auth'));

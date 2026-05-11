@@ -166,6 +166,15 @@ if (!alreadyMigrated && fs.existsSync(JSON_PATH)) {
   console.log('  → Migrated db.json → pitstop.db');
 }
 
+// ─── SEED: usuário demo se banco estiver vazio ────────────────────────────────
+const semUsuarios = db.prepare('SELECT COUNT(*) AS c FROM usuarios').get().c === 0;
+if (semUsuarios) {
+  const bcrypt = require('bcrypt');
+  const hash = bcrypt.hashSync('senha123', 10);
+  db.prepare("INSERT OR IGNORE INTO usuarios (usuario, senha, nome) VALUES ('aluno', ?, 'Aluno Demo')").run(hash);
+  console.log('  → Usuário demo criado: aluno / senha123');
+}
+
 // ─── USUARIOS ─────────────────────────────────────────────────────────────────
 const stmts = {
   getUser:    db.prepare('SELECT * FROM usuarios WHERE usuario = ?'),
