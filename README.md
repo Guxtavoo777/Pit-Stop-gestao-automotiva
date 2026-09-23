@@ -90,7 +90,7 @@ Na primeira execução o banco `pitstop.db` é criado automaticamente com dados 
 npm test
 ```
 
-**44 testes** cobrindo:
+**36 testes** cobrindo:
 
 | Grupo | O que é testado |
 |-------|----------------|
