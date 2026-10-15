@@ -1,0 +1,175 @@
+<%- include('partials/head') %>
+<body>
+<%- include('partials/topnav') %>
+<main class="main">
+
+  <% if (inativo) { %>
+  <div class="alert" style="background:rgba(100,100,100,.08);border-color:rgba(100,100,100,.25);margin-bottom:0">
+    Este veículo está <b>inativo</b>. <a href="/editar-veiculo/<%= v.id %>" style="color:var(--or)">Reativar →</a>
+  </div>
+  <% } %>
+
+  <div class="page-header an an-d1">
+    <div>
+      <div class="page-title"><span><%= v.modelo %></span></div>
+      <div class="page-subtitle"><%= v.marca %> · <%= v.ano %><%= v.cor ? ' · ' + v.cor : '' %></div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a href="/manutencao/<%= v.id %>" class="btn btn-primary">Registrar manutenção</a>
+      <a href="/editar-veiculo/<%= v.id %>" class="btn btn-ghost">Editar</a>
+      <a href="/garagem" class="btn btn-ghost">← Voltar</a>
+    </div>
+  </div>
+
+  <img class="det-photo an an-d2" src="<%= v.img %>" alt="<%= v.modelo %>" onerror="this.src='https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=900&auto=format'">
+
+  <div class="det-info an an-d3">
+    <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:center">
+      <div><div class="spec-row-label">Marca</div><div style="font-size:1.3rem;font-weight:900"><%= v.marca %></div></div>
+      <div><div class="spec-row-label">Ano</div><div style="font-size:1.3rem;font-weight:900"><%= v.ano %></div></div>
+      <div><div class="spec-row-label">Placa</div><div style="font-size:1.3rem;font-weight:900"><%= v.placa || '—' %></div></div>
+      <div><div class="spec-row-label">Quilometragem</div><div style="font-size:1.3rem;font-weight:900"><%= Number(v.km).toLocaleString('pt-BR') %> km</div></div>
+      <div><div class="spec-row-label">Total gasto</div><div style="font-size:1.3rem;font-weight:900;color:var(--or)">R$ <%= brl(totalGasto) %></div></div>
+      <div><div class="spec-row-label">Situação</div><span class="tag-status <%= sitCls %>" style="position:static"><%= sit.texto %></span></div>
+    </div>
+    <% if (specs.length) { %>
+    <div class="det-specs">
+      <% specs.forEach(function(x) { %>
+      <div class="spec-item"><div class="spec-r"><%= x[0] %></div><div class="spec-v"><%= x[1] %></div></div>
+      <% }) %>
+    </div>
+    <% } %>
+  </div>
+
+  <div class="gchart an an-d4">
+    <div class="stat-card"><div class="stat-label">Manutenções</div><div class="stat-value blue"><%= ms.length %></div><div class="stat-detail">registradas</div></div>
+    <div class="chart-card"><div class="section-label">Gastos por mês</div><canvas id="gv" height="130"></canvas></div>
+  </div>
+
+  <div class="veiculo-tabs an an-d5">
+    <button class="vtab-btn vtab-active" onclick="showTab('manut')">Manutenções (<%= ms.length %>)</button>
+    <button class="vtab-btn" onclick="showTab('revisoes')">Revisões (<%= vRevs.length %>)</button>
+  </div>
+
+  <div id="tab-manut">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Serviço</th><th>Descrição</th><th>Oficina</th><th>KM</th><th>Valor</th><th>Data</th><th>Próxima</th><th></th></tr></thead>
+        <tbody>
+          <% if (ms.length) { %>
+            <% ms.forEach(function(m) { %>
+            <tr>
+              <td><span class="pill pill-orange"><%= m.tipo %></span></td>
+              <td style="color:var(--gray-600)"><%= m.descricao || '—' %></td>
+              <td style="color:var(--gray-600)"><%= m.oficina || '—' %></td>
+              <td><%= m.km_na_revisao ? m.km_na_revisao + ' km' : '—' %></td>
+              <td style="font-weight:800;color:var(--or)">R$ <%= brl(m.custo) %></td>
+              <td style="color:var(--gray-600)"><%= m.data %></td>
+              <td style="color:var(--gray-600)"><%= m.proxima_data || '—' %></td>
+              <td><button class="btn btn-danger btn-sm" onclick="remover(<%= m.id %>)">Remover</button></td>
+            </tr>
+            <% }) %>
+          <% } else { %>
+            <tr><td colspan="8" class="no-items">Nenhuma manutenção registrada.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:12px;text-align:right"><a href="/manutencao/<%= v.id %>" class="btn btn-ghost btn-sm">+ Registrar manutenção</a></div>
+  </div>
+
+  <div id="tab-revisoes" style="display:none">
+    <% if (vRevs.length) { %>
+      <% vRevs.forEach(function(rv) { %>
+      <% var sr = situacaoRev(rv); %>
+      <% var sitCls2 = sr.tipo === 'ok' ? 'rev-ok' : sr.tipo === 'critico' ? 'rev-cr' : 'rev-av'; %>
+      <% var itensR = rv.itens_revisados || {}; %>
+      <% var totalR = Object.keys(itensR).length; %>
+      <% var aprovR = Object.values(itensR).filter(function(x){ return x === 'aprovado'; }).length; %>
+      <% var atencR = Object.values(itensR).filter(function(x){ return x === 'atencao'; }).length; %>
+      <div class="rev-card" style="margin-bottom:12px">
+        <div class="rev-card-header">
+          <div>
+            <div class="rev-doc-num"><%= rv.numero_doc %></div>
+            <div class="rev-card-title"><%= rv.tipo %></div>
+            <div class="rev-card-sub"><%= rv.data %> · <%= rv.oficina || '—' %> · Mec: <%= rv.mecanico || '—' %></div>
+          </div>
+          <span class="rev-status <%= sitCls2 %>"><%= sr.texto %></span>
+        </div>
+        <div class="rev-card-body">
+          <div class="rev-mini-stats">
+            <div><span class="rev-mini-val" style="color:var(--ok)"><%= aprovR %></span><span class="rev-mini-label">Aprovados</span></div>
+            <div><span class="rev-mini-val" style="color:var(--av)"><%= atencR %></span><span class="rev-mini-label">Atenção</span></div>
+            <div><span class="rev-mini-val" style="color:var(--or)"><%= totalR > 0 ? Math.round(aprovR / totalR * 100) : 0 %>%</span><span class="rev-mini-label">Saúde</span></div>
+            <div><span class="rev-mini-val" style="color:var(--or)">R$ <%= brl(rv.custo) %></span><span class="rev-mini-label">Custo</span></div>
+          </div>
+          <div class="rev-card-actions">
+            <a href="/revisao/<%= rv.id %>/documento" class="btn btn-outline btn-sm">Ver Laudo</a>
+            <button class="btn btn-danger btn-sm" onclick="removerRev(<%= rv.id %>)">Remover</button>
+          </div>
+        </div>
+      </div>
+      <% }) %>
+    <% } else { %>
+      <div class="empty-state">
+        <div class="empty-state-icon"><svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>
+        <div class="empty-state-title">Sem revisões</div>
+        <div class="empty-state-sub">Nenhuma revisão registrada para este veículo ainda.</div>
+        <a href="/revisao/nova" class="btn btn-outline">+ Registrar revisão</a>
+      </div>
+    <% } %>
+    <div style="margin-top:12px;text-align:right"><a href="/revisao/nova?vid=<%= v.id %>" class="btn btn-primary btn-sm">+ Nova revisão</a></div>
+  </div>
+
+</main>
+<%- include('partials/scripts') %>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+var gv = document.getElementById('gv');
+if (gv) new Chart(gv, {
+  type: 'line',
+  data: {
+    labels: <%- JSON.stringify(meses) %>,
+    datasets: [{
+      label: 'R$',
+      data: <%- JSON.stringify(meses.map(function(m){ return mmap[m]; })) %>,
+      borderColor: '#E8601C',
+      backgroundColor: 'rgba(232,96,28,.1)',
+      tension: .4,
+      fill: true,
+      pointBackgroundColor: '#E8601C',
+      pointRadius: 5
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#9a9a9a' } },
+      y: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { color: '#9a9a9a', callback: function(v){ return 'R$' + v; } } }
+    }
+  }
+});
+function remover(id) {
+  confirmDialog('Remover esta manutenção?', async function() {
+    await fetch('/api/manut/' + id, { method: 'DELETE' });
+    toast('Manutenção removida', 'av');
+    setTimeout(function() { location.reload(); }, 900);
+  });
+}
+function removerRev(id) {
+  confirmDialog('Remover esta revisão?', async function() {
+    await fetch('/api/revisoes/' + id, { method: 'DELETE' });
+    toast('Revisão removida', 'av');
+    setTimeout(function() { location.reload(); }, 900);
+  });
+}
+function showTab(t) {
+  document.getElementById('tab-manut').style.display = t === 'manut' ? 'block' : 'none';
+  document.getElementById('tab-revisoes').style.display = t === 'revisoes' ? 'block' : 'none';
+  document.querySelectorAll('.vtab-btn').forEach(function(b) { b.classList.remove('vtab-active'); });
+  event.target.classList.add('vtab-active');
+}
+</script>
+</body>
+</html>
