@@ -47,9 +47,9 @@
             <div class="rev-mini-stats">
               <div><span class="rev-mini-val" style="color:var(--ok)"><%= aprovados %></span><span class="rev-mini-label">Aprovados</span></div>
               <div><span class="rev-mini-val" style="color:var(--av)"><%= atencoes %></span><span class="rev-mini-label">Atenção</span></div>
-              <div><span class="rev-mini-val" style="color:var(--or)"><%= total > 0 ? Math.round(aprovados / total * 100) : 0 %>%</span><span class="rev-mini-label">Saúde</span></div>
+              <div><span class="rev-mini-val"><%= total > 0 ? Math.round(aprovados / total * 100) : 0 %>%</span><span class="rev-mini-label">Saúde</span></div>
               <div><span class="rev-mini-val"><%= rv.km_na_revisao ? Number(rv.km_na_revisao).toLocaleString('pt-BR') + ' km' : '—' %></span><span class="rev-mini-label">KM</span></div>
-              <div><span class="rev-mini-val" style="color:var(--or)">R$ <%= brl(rv.custo) %></span><span class="rev-mini-label">Custo</span></div>
+              <div><span class="rev-mini-val">R$ <%= brl(rv.custo) %></span><span class="rev-mini-label">Custo</span></div>
             </div>
             <div class="rev-card-actions">
               <a href="/revisao/<%= rv.id %>/documento" class="btn btn-outline btn-sm">Ver Laudo</a>

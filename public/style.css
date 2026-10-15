@@ -1,20 +1,25 @@
 /* ═══════════════════════════════════════════════════════
-   PIT STOP — BMW-Inspired Design System v4.0
-   Navbar horizontal · Branco/Preto · Premium
+   PIT STOP — Design System v6.0
+   Preto/branco/cinzas · títulos em serifa · laranja só no
+   botão principal e nos estados de atenção
 ═══════════════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300;8..60,400&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
   /* Core palette */
   --white: #ffffff;
-  --black: #0a0a0a;
-  --gray-50: #f9f9f9;
+  --black: #111111;
+  --gray-50: #f8f8f8;
   --gray-100: #f0f0f0;
-  --gray-200: #e2e2e2;
+  --gray-200: #e8e8e8;
   --gray-400: #9a9a9a;
-  --gray-600: #5a5a5a;
+  --gray-600: #696969;
   --gray-700: #3a3a3a;
-  --gray-800: #2a2a2a;
+  --gray-800: #333333;
+
+  /* Tipografia */
+  --serif: 'Source Serif 4', Georgia, serif;
+  --ease: cubic-bezier(.165, .84, .44, 1);
 
   /* Brand orange (Pit Stop) */
   --or: #E8601C;
@@ -30,11 +35,12 @@
 
   /* Radii */
   --r-xs: 4px;
-  --r-sm: 6px;
-  --r: 10px;
-  --r-lg: 16px;
+  --r-sm: 8px;
+  --r: 12px;
+  --r-lg: 12px;
+  --r-pill: 9999px;
 
-  --transition: all .2s cubic-bezier(.4, 0, .2, 1);
+  --transition: all .2s ease-in-out;
 }
 
 /* ─── RESET ─────────────────────────────────────────── */
@@ -53,7 +59,8 @@ html {
 
 body {
   font-family: 'Inter', system-ui, sans-serif;
-  background: var(--gray-50);
+  background: var(--white);
+  -webkit-font-smoothing: antialiased;
   color: var(--black);
   min-height: 100vh;
   overflow-x: hidden;
@@ -93,40 +100,16 @@ a {
 }
 
 .nav-logo {
-  font-family: 'Inter', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 900;
-  letter-spacing: 4px;
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  font-weight: 400;
+  letter-spacing: .32em;
   text-transform: uppercase;
   color: var(--white);
   display: flex;
   align-items: center;
-  gap: 10px;
   margin-right: 40px;
   white-space: nowrap;
-}
-
-.nav-logo-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--or);
-  box-shadow: 0 0 10px var(--or);
-  animation: dot-pulse 2.5s ease-in-out infinite;
-}
-
-@keyframes dot-pulse {
-
-  0%,
-  100% {
-    opacity: 1;
-    box-shadow: 0 0 10px var(--or)
-  }
-
-  50% {
-    opacity: .4;
-    box-shadow: 0 0 4px var(--or)
-  }
 }
 
 .nav-items {
@@ -167,8 +150,8 @@ a {
   bottom: -1px;
   left: 16px;
   right: 16px;
-  height: 2px;
-  background: var(--or);
+  height: 1px;
+  background: var(--white);
 }
 
 .nav-item {
@@ -186,13 +169,12 @@ a {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: var(--org);
-  border: 1.5px solid var(--or);
+  background: var(--gray-800);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  color: var(--or);
+  font-weight: 600;
+  color: var(--white);
   font-size: .85rem;
   cursor: pointer;
 }
@@ -273,7 +255,7 @@ a {
 }
 
 .mobile-menu a.active {
-  color: var(--or);
+  color: var(--white);
 }
 
 @media(max-width:860px) {
@@ -293,7 +275,7 @@ a {
 /* ─── MAIN CONTENT ───────────────────────────────────── */
 .main {
   min-height: calc(100vh - 62px);
-  padding: 36px 44px;
+  padding: 48px 44px;
   max-width: 1280px;
   margin: 0 auto;
 }
@@ -345,7 +327,7 @@ a {
   font-weight: 700;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: var(--or);
+  color: rgba(255, 255, 255, .7);
   margin-bottom: 10px;
 }
 
@@ -368,9 +350,9 @@ a {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 28px;
-  padding-bottom: 22px;
-  border-bottom: 1px solid var(--gray-200);
+  margin-bottom: 36px;
+  padding-bottom: 0;
+  border-bottom: none;
   gap: 14px;
   flex-wrap: wrap;
 }
@@ -383,7 +365,7 @@ a {
 }
 
 .page-title span {
-  color: var(--or);
+  color: var(--black);
 }
 
 .page-subtitle {
@@ -427,13 +409,13 @@ a {
   padding: 22px;
   position: relative;
   overflow: hidden;
-  transition: var(--transition);
+  transition: transform .4s var(--ease), box-shadow .4s var(--ease);
 }
 
 .stat-card:hover {
-  border-color: var(--or);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, .08);
+  border-color: var(--gray-200);
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .08);
 }
 
 .stat-card::before {
@@ -443,9 +425,10 @@ a {
   left: 0;
   right: 0;
   height: 3px;
-  background: var(--or);
+  background: var(--black);
   opacity: 0;
   transition: opacity .2s;
+  display: none;
 }
 
 .stat-card:hover::before {
@@ -469,7 +452,7 @@ a {
 }
 
 .stat-value.orange {
-  color: var(--or);
+  color: var(--black);
 }
 
 .stat-value.green {
@@ -481,7 +464,7 @@ a {
 }
 
 .stat-value.blue {
-  color: var(--az);
+  color: var(--black);
 }
 
 .stat-detail {
@@ -526,13 +509,13 @@ a {
   text-decoration: none;
   color: inherit;
   display: block;
-  transition: transform .3s cubic-bezier(.4, 0, .2, 1), box-shadow .3s, border-color .3s;
+  transition: transform .4s var(--ease), box-shadow .4s var(--ease);
 }
 
 .car-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 48px rgba(0, 0, 0, .12);
-  border-color: var(--or);
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .08);
+  border-color: var(--gray-200);
 }
 
 .car-photo {
@@ -546,12 +529,12 @@ a {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform .5s cubic-bezier(.4, 0, .2, 1), filter .3s;
+  transition: transform .6s var(--ease);
 }
 
 .car-card:hover .car-photo img {
-  transform: scale(1.06);
-  filter: brightness(1.05);
+  transform: scale(1.04);
+  filter: none;
 }
 
 .car-photo-overlay {
@@ -568,7 +551,7 @@ a {
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, .15);
   padding: 3px 10px;
-  border-radius: var(--r-xs);
+  border-radius: var(--r-pill);
   font-size: .62rem;
   font-weight: 700;
   letter-spacing: 2px;
@@ -581,7 +564,7 @@ a {
   top: 12px;
   right: 12px;
   padding: 3px 10px;
-  border-radius: var(--r-xs);
+  border-radius: var(--r-pill);
   font-size: .65rem;
   font-weight: 700;
 }
@@ -651,7 +634,7 @@ a {
 }
 
 .spec-row-value {
-  font-weight: 800;
+  font-weight: 600;
   font-size: .96rem;
   white-space: nowrap;
   overflow: hidden;
@@ -698,8 +681,8 @@ a {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  padding: 11px 22px;
-  border-radius: var(--r-xs);
+  padding: 12px 24px;
+  border-radius: var(--r-pill);
   border: none;
   font-family: 'Inter', sans-serif;
   font-size: .85rem;
@@ -708,7 +691,7 @@ a {
   text-decoration: none;
   transition: var(--transition);
   white-space: nowrap;
-  letter-spacing: .2px;
+  letter-spacing: 0;
 }
 
 .btn:active {
@@ -719,19 +702,19 @@ a {
 .btn-primary {
   background: var(--or);
   color: var(--white);
-  box-shadow: 0 2px 10px rgba(232, 96, 28, .3);
+  box-shadow: none;
 }
 
 .btn-primary:hover {
   background: var(--or2);
-  box-shadow: 0 4px 18px rgba(232, 96, 28, .45);
-  transform: translateY(-1px);
+  box-shadow: none;
+  transform: none;
 }
 
 .btn-outline {
   background: transparent;
   color: var(--black);
-  border: 1.5px solid var(--black);
+  border: 1px solid var(--black);
 }
 
 .btn-outline:hover {
@@ -742,7 +725,7 @@ a {
 .btn-ghost {
   background: var(--white);
   color: var(--gray-600);
-  border: 1.5px solid var(--gray-200);
+  border: 1px solid var(--gray-200);
 }
 
 .btn-ghost:hover {
@@ -753,7 +736,7 @@ a {
 .btn-danger {
   background: rgba(229, 48, 48, .08);
   color: var(--cr);
-  border: 1.5px solid rgba(229, 48, 48, .2);
+  border: 1px solid rgba(229, 48, 48, .2);
 }
 
 .btn-danger:hover {
@@ -772,7 +755,7 @@ a {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .btn-sm {
-  padding: 7px 14px;
+  padding: 8px 16px;
   font-size: .78rem;
 }
 
@@ -818,8 +801,8 @@ a {
 }
 
 .form-input:focus {
-  border-color: var(--or);
-  box-shadow: 0 0 0 3px rgba(232, 96, 28, .1);
+  border-color: var(--black);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, .1);
 }
 
 .form-input::placeholder {
@@ -899,16 +882,16 @@ tr:hover td {
 .pill {
   display: inline-block;
   padding: 3px 10px;
-  border-radius: var(--r-xs);
+  border-radius: var(--r-pill);
   font-size: .7rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: .5px;
 }
 
 .pill-orange {
-  background: var(--org);
-  color: var(--or);
-  border: 1px solid rgba(232, 96, 28, .2);
+  background: var(--gray-100);
+  color: var(--black);
+  border: 1px solid rgba(0, 0, 0, .2);
 }
 
 .pill-blue {
@@ -1005,20 +988,20 @@ tr:hover td {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--or), var(--or3));
+  background: linear-gradient(90deg, var(--black), var(--black));
 }
 
 .profile-avatar {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: var(--org);
-  border: 2px solid var(--or);
+  background: var(--gray-100);
+  border: 2px solid var(--black);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 900;
-  color: var(--or);
+  color: var(--black);
   font-size: 2rem;
   flex-shrink: 0;
 }
@@ -1072,7 +1055,7 @@ tr:hover td {
   font-size: .7rem;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: var(--or);
+  color: var(--black);
   margin-bottom: 10px;
 }
 
@@ -1111,7 +1094,7 @@ tr:hover td {
 }
 
 .login-logo span {
-  color: var(--or);
+  color: var(--black);
 }
 
 .login-tag {
@@ -1121,9 +1104,9 @@ tr:hover td {
 }
 
 .login-hint {
-  background: rgba(232, 96, 28, .07);
-  border: 1px solid rgba(232, 96, 28, .2);
-  border-left: 3px solid var(--or);
+  background: rgba(0, 0, 0, .07);
+  border: 1px solid rgba(0, 0, 0, .2);
+  border-left: 3px solid var(--black);
   border-radius: var(--r-sm);
   padding: 13px 16px;
   font-size: .83rem;
@@ -1160,8 +1143,8 @@ tr:hover td {
 }
 
 .search-input:focus {
-  border-color: var(--or);
-  box-shadow: 0 0 0 3px rgba(232, 96, 28, .1);
+  border-color: var(--black);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, .1);
 }
 
 .search-input::placeholder {
@@ -1193,13 +1176,13 @@ tr:hover td {
 }
 
 .car-option-btn:hover {
-  border-color: var(--or);
+  border-color: var(--black);
   transform: translateY(-3px);
 }
 
 .car-option-btn.selected {
-  border-color: var(--or);
-  background: var(--org);
+  border-color: var(--black);
+  background: var(--gray-100);
 }
 
 .car-option-img {
@@ -1226,9 +1209,9 @@ tr:hover td {
 }
 
 .specs-preview {
-  background: rgba(232, 96, 28, .06);
-  border: 1px solid rgba(232, 96, 28, .2);
-  border-left: 3px solid var(--or);
+  background: rgba(0, 0, 0, .06);
+  border: 1px solid rgba(0, 0, 0, .2);
+  border-left: 3px solid var(--black);
   border-radius: var(--r-sm);
   padding: 18px;
   margin-bottom: 18px;
@@ -1242,7 +1225,7 @@ tr:hover td {
 .specs-preview-title {
   font-weight: 700;
   font-size: .9rem;
-  color: var(--or);
+  color: var(--black);
   margin-bottom: 12px;
   display: flex;
   align-items: center;
@@ -1265,7 +1248,7 @@ tr:hover td {
   font-size: .58rem;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: rgba(232, 96, 28, .9);
+  color: rgba(0, 0, 0, .9);
   margin-bottom: 2px;
 }
 
@@ -1291,7 +1274,7 @@ tr:hover td {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--or), var(--or3));
+  background: linear-gradient(90deg, var(--black), var(--black));
 }
 
 .catalog-hero::after {
@@ -1342,13 +1325,13 @@ tr:hover td {
 }
 
 .filter-btn:hover {
-  border-color: var(--or);
-  color: var(--or);
+  border-color: var(--black);
+  color: var(--black);
 }
 
 .filter-btn.active {
-  background: var(--or);
-  border-color: var(--or);
+  background: var(--black);
+  border-color: var(--black);
   color: var(--white);
 }
 
@@ -1369,7 +1352,7 @@ tr:hover td {
 .catalog-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 20px 48px rgba(0, 0, 0, .1);
-  border-color: var(--or);
+  border-color: var(--black);
 }
 
 .catalog-photo {
@@ -1468,7 +1451,7 @@ tr:hover td {
 
 .catalog-price-value {
   font-weight: 800;
-  color: var(--or);
+  color: var(--black);
   font-size: .98rem;
 }
 
@@ -1622,7 +1605,7 @@ body {
 }
 
 .no-items a {
-  color: var(--or);
+  color: var(--black);
   font-weight: 600;
 }
 
@@ -1685,12 +1668,12 @@ body {
 .empty-dashboard-icon {
   width: 80px;
   height: 80px;
-  background: rgba(232, 96, 28, .08);
+  background: rgba(0, 0, 0, .08);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--or);
+  color: var(--black);
   margin-bottom: 24px;
 }
 .empty-dashboard-title {
@@ -1790,9 +1773,9 @@ body.is-leaving {
 }
 
 .vtab-btn.vtab-active {
-  color: var(--or);
-  border-bottom-color: var(--or);
-  background: rgba(232, 96, 28, .04);
+  color: var(--black);
+  border-bottom-color: var(--black);
+  background: rgba(0, 0, 0, .04);
 }
 
 /* ─── REVISÕES TIMELINE ──────────────────────────────── */
@@ -1846,7 +1829,7 @@ body.is-leaving {
 }
 
 .rev-card:hover {
-  border-color: var(--or);
+  border-color: var(--black);
   box-shadow: 0 8px 28px rgba(0,0,0,.08);
   transform: translateY(-1px);
 }
@@ -1865,7 +1848,7 @@ body.is-leaving {
   font-size: .68rem;
   font-weight: 700;
   letter-spacing: 2px;
-  color: var(--or);
+  color: var(--black);
   text-transform: uppercase;
   margin-bottom: 4px;
 }
@@ -2158,14 +2141,14 @@ body.is-leaving {
   width: 88px;
   height: 88px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--or), var(--or3));
+  background: linear-gradient(135deg, var(--black), var(--black));
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 2.2rem;
   font-weight: 900;
   color: var(--white);
-  box-shadow: 0 8px 28px rgba(232,96,28,.35);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .35);
   margin-bottom: 16px;
   letter-spacing: -1px;
   transition: transform .3s;
@@ -2212,7 +2195,7 @@ body.is-leaving {
 }
 
 .perfil-stat-val.orange {
-  color: var(--or);
+  color: var(--black);
 }
 
 .perfil-stat-label {
@@ -2314,4 +2297,12 @@ body.is-leaving {
   background: rgba(229,48,48,.08);
   color: var(--cr);
   border: 1px solid rgba(229,48,48,.2);
+}
+/* ─── TÍTULOS EM SERIFA (v6) ─────────────────────────── */
+.hero-title, .page-title, .stat-value, .car-name, .login-left-title, .login-logo,
+.catalog-hero-title, .catalog-name, .catalog-price-value, .empty-dashboard-title,
+.rev-card-title, .rev-mini-val, .perfil-avatar-name, .perfil-stat-val, .perfil-section-title {
+  font-family: var(--serif);
+  font-weight: 300;
+  letter-spacing: -.01em;
 }

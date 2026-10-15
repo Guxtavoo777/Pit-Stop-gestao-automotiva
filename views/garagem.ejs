@@ -29,7 +29,7 @@
           <div class="car-specs">
             <div><div class="spec-row-label">Quilometragem</div><div class="spec-row-value"><%= Number(v.km).toLocaleString('pt-BR') %> km</div></div>
             <div><div class="spec-row-label">Placa</div><div class="spec-row-value"><%= v.placa || '—' %></div></div>
-            <div><div class="spec-row-label">Total Gasto</div><div class="spec-row-value" style="color:var(--or)">R$ <%= brl(c) %></div></div>
+            <div><div class="spec-row-label">Total Gasto</div><div class="spec-row-value">R$ <%= brl(c) %></div></div>
             <div><div class="spec-row-label">Potência</div><div class="spec-row-value"><%= v.potencia || '—' %></div></div>
           </div>
           <div class="car-actions" onclick="event.stopPropagation()">
@@ -68,7 +68,7 @@
         <div class="car-specs">
           <div><div class="spec-row-label">Quilometragem</div><div class="spec-row-value"><%= Number(v.km).toLocaleString('pt-BR') %> km</div></div>
           <div><div class="spec-row-label">Placa</div><div class="spec-row-value"><%= v.placa || '—' %></div></div>
-          <div><div class="spec-row-label">Total Gasto</div><div class="spec-row-value" style="color:var(--or)">R$ <%= brl(c) %></div></div>
+          <div><div class="spec-row-label">Total Gasto</div><div class="spec-row-value">R$ <%= brl(c) %></div></div>
           <div><div class="spec-row-label">Potência</div><div class="spec-row-value"><%= v.potencia || '—' %></div></div>
         </div>
         <div class="car-actions" onclick="event.stopPropagation()">

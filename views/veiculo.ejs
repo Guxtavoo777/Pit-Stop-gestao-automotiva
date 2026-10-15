@@ -5,7 +5,7 @@
 
   <% if (inativo) { %>
   <div class="alert" style="background:rgba(100,100,100,.08);border-color:rgba(100,100,100,.25);margin-bottom:0">
-    Este veículo está <b>inativo</b>. <a href="/editar-veiculo/<%= v.id %>" style="color:var(--or)">Reativar →</a>
+    Este veículo está <b>inativo</b>. <a href="/editar-veiculo/<%= v.id %>">Reativar</a>
   </div>
   <% } %>
 
@@ -17,7 +17,7 @@
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <a href="/manutencao/<%= v.id %>" class="btn btn-primary">Registrar manutenção</a>
       <a href="/editar-veiculo/<%= v.id %>" class="btn btn-ghost">Editar</a>
-      <a href="/garagem" class="btn btn-ghost">← Voltar</a>
+      <a href="/garagem" class="btn btn-ghost">Voltar</a>
     </div>
   </div>
 
@@ -25,11 +25,11 @@
 
   <div class="det-info an an-d3">
     <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:center">
-      <div><div class="spec-row-label">Marca</div><div style="font-size:1.3rem;font-weight:900"><%= v.marca %></div></div>
-      <div><div class="spec-row-label">Ano</div><div style="font-size:1.3rem;font-weight:900"><%= v.ano %></div></div>
-      <div><div class="spec-row-label">Placa</div><div style="font-size:1.3rem;font-weight:900"><%= v.placa || '—' %></div></div>
-      <div><div class="spec-row-label">Quilometragem</div><div style="font-size:1.3rem;font-weight:900"><%= Number(v.km).toLocaleString('pt-BR') %> km</div></div>
-      <div><div class="spec-row-label">Total gasto</div><div style="font-size:1.3rem;font-weight:900;color:var(--or)">R$ <%= brl(totalGasto) %></div></div>
+      <div><div class="spec-row-label">Marca</div><div style="font-size:1.3rem;font-family:var(--serif);font-weight:300"><%= v.marca %></div></div>
+      <div><div class="spec-row-label">Ano</div><div style="font-size:1.3rem;font-family:var(--serif);font-weight:300"><%= v.ano %></div></div>
+      <div><div class="spec-row-label">Placa</div><div style="font-size:1.3rem;font-family:var(--serif);font-weight:300"><%= v.placa || '—' %></div></div>
+      <div><div class="spec-row-label">Quilometragem</div><div style="font-size:1.3rem;font-family:var(--serif);font-weight:300"><%= Number(v.km).toLocaleString('pt-BR') %> km</div></div>
+      <div><div class="spec-row-label">Total gasto</div><div style="font-size:1.3rem;font-family:var(--serif);font-weight:300">R$ <%= brl(totalGasto) %></div></div>
       <div><div class="spec-row-label">Situação</div><span class="tag-status <%= sitCls %>" style="position:static"><%= sit.texto %></span></div>
     </div>
     <% if (specs.length) { %>
@@ -63,7 +63,7 @@
               <td style="color:var(--gray-600)"><%= m.descricao || '—' %></td>
               <td style="color:var(--gray-600)"><%= m.oficina || '—' %></td>
               <td><%= m.km_na_revisao ? m.km_na_revisao + ' km' : '—' %></td>
-              <td style="font-weight:800;color:var(--or)">R$ <%= brl(m.custo) %></td>
+              <td style="font-weight:600">R$ <%= brl(m.custo) %></td>
               <td style="color:var(--gray-600)"><%= m.data %></td>
               <td style="color:var(--gray-600)"><%= m.proxima_data || '—' %></td>
               <td><button class="btn btn-danger btn-sm" onclick="remover(<%= m.id %>)">Remover</button></td>
@@ -100,8 +100,8 @@
           <div class="rev-mini-stats">
             <div><span class="rev-mini-val" style="color:var(--ok)"><%= aprovR %></span><span class="rev-mini-label">Aprovados</span></div>
             <div><span class="rev-mini-val" style="color:var(--av)"><%= atencR %></span><span class="rev-mini-label">Atenção</span></div>
-            <div><span class="rev-mini-val" style="color:var(--or)"><%= totalR > 0 ? Math.round(aprovR / totalR * 100) : 0 %>%</span><span class="rev-mini-label">Saúde</span></div>
-            <div><span class="rev-mini-val" style="color:var(--or)">R$ <%= brl(rv.custo) %></span><span class="rev-mini-label">Custo</span></div>
+            <div><span class="rev-mini-val"><%= totalR > 0 ? Math.round(aprovR / totalR * 100) : 0 %>%</span><span class="rev-mini-label">Saúde</span></div>
+            <div><span class="rev-mini-val">R$ <%= brl(rv.custo) %></span><span class="rev-mini-label">Custo</span></div>
           </div>
           <div class="rev-card-actions">
             <a href="/revisao/<%= rv.id %>/documento" class="btn btn-outline btn-sm">Ver Laudo</a>
@@ -133,11 +133,11 @@ if (gv) new Chart(gv, {
     datasets: [{
       label: 'R$',
       data: <%- JSON.stringify(meses.map(function(m){ return mmap[m]; })) %>,
-      borderColor: '#E8601C',
-      backgroundColor: 'rgba(232,96,28,.1)',
+      borderColor: '#111',
+      backgroundColor: 'rgba(0,0,0,.05)',
       tension: .4,
       fill: true,
-      pointBackgroundColor: '#E8601C',
+      pointBackgroundColor: '#111',
       pointRadius: 5
     }]
   },
