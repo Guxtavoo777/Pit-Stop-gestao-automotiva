@@ -129,7 +129,7 @@ document.getElementById('pw-nova').addEventListener('input', function() {
   if (/[^A-Za-z0-9]/.test(v)) s++;
   var fill = document.getElementById('pw-strength-fill');
   var lbl = document.getElementById('pw-strength-label');
-  var cols = ['', '#E53030', '#E8601C', '#f0b429', '#4caf50', '#2e7d32'];
+  var cols = ['', '#E53030', '#9A6700', '#f0b429', '#4caf50', '#2e7d32'];
   var txts = ['', 'Muito fraca', 'Fraca', 'Média', 'Forte', 'Muito forte'];
   fill.style.width = (s * 20) + '%';
   fill.style.background = cols[s] || cols[1];

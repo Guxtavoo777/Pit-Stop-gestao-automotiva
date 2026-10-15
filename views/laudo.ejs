@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Laudo <%= rv.numero_doc %> — Pit Stop</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23E8601C'/%3E%3Cpath d='M6 20a3 3 0 106 0 3 3 0 00-6 0zm14 0a3 3 0 106 0 3 3 0 00-6 0zM4 20h2m18 0h2M6.5 17l2-7h15l2 7' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23111'/%3E%3Cpath d='M6 20a3 3 0 106 0 3 3 0 00-6 0zm14 0a3 3 0 106 0 3 3 0 00-6 0zM4 20h2m18 0h2M6.5 17l2-7h15l2 7' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="/style.css?v=6">
 <style>
@@ -24,11 +24,11 @@
 .doc-checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;}
 .doc-check-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r-sm);border:1px solid var(--gray-100);font-size:.88rem;font-weight:500;}
 .doc-item-ok{background:rgba(29,185,84,.06);border-color:rgba(29,185,84,.2);}
-.doc-item-av{background:rgba(232,96,28,.07);border-color:rgba(232,96,28,.25);}
+.doc-item-av{background:rgba(191,135,0,.07);border-color:rgba(191,135,0,.25);}
 .doc-item-skip{background:var(--gray-50);color:var(--gray-400);}
 .doc-check-icon{font-size:.78rem;font-weight:600;flex-shrink:0;width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;}
 .doc-item-ok .doc-check-icon{background:rgba(29,185,84,.15);color:var(--ok);}
-.doc-item-av .doc-check-icon{background:rgba(232,96,28,.15);color:var(--or);}
+.doc-item-av .doc-check-icon{background:rgba(191,135,0,.15);color:var(--or);}
 .doc-item-skip .doc-check-icon{background:var(--gray-200);color:var(--gray-400);}
 .doc-saude{display:flex;align-items:center;gap:24px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--r);padding:18px 22px;margin-bottom:20px;flex-wrap:wrap;}
 .doc-saude-num{font-size:2.5rem;font-family:var(--serif);font-weight:300;letter-spacing:-2px;}

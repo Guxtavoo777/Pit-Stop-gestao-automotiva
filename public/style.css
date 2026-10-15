@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    PIT STOP — Design System v6.0
-   Preto/branco/cinzas · títulos em serifa · laranja só no
-   botão principal e nos estados de atenção
+   Preto/branco/cinzas · títulos em serifa · âmbar só nos
+   estados de atenção (revisão próxima, alertas, checklist)
 ═══════════════════════════════════════════════════════ */
 @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300;8..60,400&family=Inter:wght@400;500;600;700&display=swap');
 
@@ -21,16 +21,16 @@
   --serif: 'Source Serif 4', Georgia, serif;
   --ease: cubic-bezier(.165, .84, .44, 1);
 
-  /* Brand orange (Pit Stop) */
-  --or: #E8601C;
-  --or2: #C94E0E;
-  --or3: #FF7A3A;
-  --org: rgba(232, 96, 28, .1);
+  /* Âmbar de atenção (variáveis --or* mantidas por compatibilidade) */
+  --or: #9A6700;
+  --or2: #7D5300;
+  --or3: #BF8700;
+  --org: rgba(191, 135, 0, .1);
 
   /* Status */
   --ok: #1DB954;
   --cr: #E53030;
-  --av: #E8601C;
+  --av: #9A6700;
   --az: #0070D8;
 
   /* Radii */
@@ -576,8 +576,8 @@ a {
 }
 
 .s-av {
-  background: rgba(232, 96, 28, .2);
-  border: 1px solid rgba(232, 96, 28, .5);
+  background: rgba(191, 135, 0, .2);
+  border: 1px solid rgba(191, 135, 0, .5);
   color: var(--or);
 }
 
@@ -650,8 +650,8 @@ a {
 
 /* ─── ALERTS ─────────────────────────────────────────── */
 .alert {
-  background: rgba(232, 96, 28, .07);
-  border: 1px solid rgba(232, 96, 28, .25);
+  background: rgba(191, 135, 0, .07);
+  border: 1px solid rgba(191, 135, 0, .25);
   border-left: 3px solid var(--or);
   border-radius: var(--r-sm);
   padding: 14px 18px;
@@ -700,15 +700,25 @@ a {
 }
 
 .btn-primary {
-  background: var(--or);
+  background: var(--black);
   color: var(--white);
   box-shadow: none;
 }
 
 .btn-primary:hover {
-  background: var(--or2);
+  background: var(--gray-800);
   box-shadow: none;
   transform: none;
+}
+
+/* Sobre foto escura (hero do dashboard) o primário vira branco */
+.hero .btn-primary {
+  background: var(--white);
+  color: var(--black);
+}
+
+.hero .btn-primary:hover {
+  background: var(--gray-200);
 }
 
 .btn-outline {
@@ -1816,7 +1826,7 @@ body.is-leaving {
 }
 
 .rev-ok-dot { background: var(--ok); box-shadow: 0 0 0 2px rgba(29,185,84,.2); }
-.rev-av-dot { background: var(--or); box-shadow: 0 0 0 2px rgba(232,96,28,.2); }
+.rev-av-dot { background: var(--or); box-shadow: 0 0 0 2px rgba(191,135,0,.2); }
 .rev-cr-dot { background: var(--cr); box-shadow: 0 0 0 2px rgba(229,48,48,.2); }
 
 /* ─── REVISÃO CARD ───────────────────────────────────── */
@@ -1885,9 +1895,9 @@ body.is-leaving {
 }
 
 .rev-av {
-  background: rgba(232,96,28,.1);
+  background: rgba(191,135,0,.1);
   color: var(--or);
-  border: 1px solid rgba(232,96,28,.2);
+  border: 1px solid rgba(191,135,0,.2);
 }
 
 .rev-cr {
@@ -1978,8 +1988,8 @@ body.is-leaving {
 }
 
 .checklist-item.chk-state-atencao {
-  border-color: rgba(232,96,28,.4);
-  background: rgba(232,96,28,.04);
+  border-color: rgba(191,135,0,.4);
+  background: rgba(191,135,0,.04);
 }
 
 .checklist-item.chk-state-nao_verificado {
@@ -2019,7 +2029,7 @@ body.is-leaving {
 }
 
 .chk-state-atencao .checklist-icon {
-  background: rgba(232,96,28,.15);
+  background: rgba(191,135,0,.15);
   color: var(--or);
 }
 
@@ -2075,7 +2085,7 @@ body.is-leaving {
 }
 
 .rev-check.atencao {
-  background: rgba(232,96,28,.1);
+  background: rgba(191,135,0,.1);
   color: var(--or);
 }
 

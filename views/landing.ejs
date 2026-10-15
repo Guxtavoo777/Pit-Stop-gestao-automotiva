@@ -17,7 +17,7 @@
 <style>
 :root{
   --ink:#111;--ink-2:#333;--mute:#696969;--line:#e8e8e8;--soft:#f8f8f8;
-  --accent:#E8601C;--accent-2:#C94E0E;
+  --accent:#111;--accent-2:#333;--attn:#BF8700;
   --serif:'Source Serif 4',Georgia,serif;--sans:'Inter',system-ui,sans-serif;
   --ease:cubic-bezier(.165,.84,.44,1);--ease-in:cubic-bezier(.35,0,0,1);
 }
@@ -30,11 +30,13 @@
 .lp-pill{letter-spacing:0;display:inline-flex;align-items:center;justify-content:center;height:46px;padding:0 26px;border-radius:9999px;font:600 .9rem var(--sans);text-decoration:none;cursor:pointer;border:1px solid transparent;transition:background-color .2s ease-in-out,color .2s ease-in-out,border-color .2s ease-in-out}
 .lp-pill-primary{background:var(--accent);color:#fff}
 .lp-pill-primary:hover{background:var(--accent-2)}
+.lp-hero .lp-pill-primary{background:#fff;color:var(--ink)}
+.lp-hero .lp-pill-primary:hover{background:var(--line)}
 .lp-pill-ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.6)}
 .lp-pill-ghost:hover{background:#fff;color:var(--ink);border-color:#fff}
 .lp-pill-dark{background:transparent;color:var(--ink);border-color:var(--ink)}
 .lp-pill-dark:hover{background:var(--ink);color:#fff}
-.lp-pill:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.lp-pill:focus-visible{outline:2px solid var(--attn);outline-offset:3px}
 
 /* Navegação */
 .nav{position:fixed;inset:0 0 auto;z-index:200;height:64px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 32px;background:#000;transition:box-shadow .3s}
@@ -362,7 +364,7 @@ document.addEventListener('DOMContentLoaded',function(){
     var v=this.value,s=0;
     if(v.length>=6)s++;if(v.length>=10)s++;if(/[A-Z]/.test(v))s++;if(/[0-9]/.test(v))s++;if(/[^A-Za-z0-9]/.test(v))s++;
     var fill=document.getElementById('lp-pw-fill');
-    var cols=['','#E53030','#E8601C','#f0b429','#4caf50','#2e7d32'];
+    var cols=['','#E53030','#9A6700','#f0b429','#4caf50','#2e7d32'];
     fill.style.width=(s*20)+'%';fill.style.background=cols[s]||cols[1];
   });
 });
