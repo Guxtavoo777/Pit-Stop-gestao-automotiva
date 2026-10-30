@@ -72,19 +72,20 @@ router.get('/dashboard', (req, res) => {
   const vs = stmts.getVeiculos.all(req.session.user);
   const ms = stmts.getManutUser.all(req.session.user);
   const totalGasto = ms.reduce((s, m) => s + (m.custo || 0), 0);
-  const alertas = vs.filter(v => situacao(v.id).tipo !== 'ok');
+  const alertas = vs.filter(v => v.ativo !== 0 && situacao(v.id).tipo !== 'ok');
   const mmap = {};
   ms.forEach(m => {
     if (m.data) { const mes = m.data.slice(0, 7); mmap[mes] = (mmap[mes] || 0) + (m.custo || 0); }
   });
   const meses = Object.keys(mmap).sort().slice(-6);
 
+  const destaque = vs.find(v => v.ativo !== 0) || vs[0];
   res.render('dashboard', {
     title: 'Dashboard', user: req.session.user, activePath: '/dashboard',
     vs, ms, alertas, totalGasto, meses, mmap,
-    heroImg: vs[0]?.foto || vs[0]?.img || CARROS[0].img,
-    heroModel: vs[0]?.modelo || 'Sua Garagem',
-    heroBrand: vs[0]?.marca || 'Pit Stop',
+    heroImg: destaque?.foto || destaque?.img || CARROS[0].img,
+    heroModel: destaque?.modelo || 'Sua Garagem',
+    heroBrand: destaque?.marca || 'Pit Stop',
     featuredCars: CARROS.slice(0, 3),
   });
 });
@@ -244,8 +245,8 @@ router.get('/explorar', (req, res) => {
 router.get('/oficinas', (req, res) => {
   const OFICINAS = [
     { nome: 'Oficina Autorizada VW - Brasília', especialidade: 'Volkswagen', ende: 'SIA Trecho 2, Lote 450 - Brasília/DF', dist: '4.2 km', tipo: 'Autorizada', img: 'https://images.unsplash.com/photo-1599839619722-39751411ea63?q=80&w=400&auto=format', aval: '4.9', map: 'https://maps.google.com' },
-    { nome: 'Auto Center Premium', especialidade: 'BMW Premium', ende: 'Setor de Oficinas Sul (SOF Sul) - Brasília/DF', dist: '6.5 km', tipo: 'Especializada', img: 'https://images.unsplash.com/photo-1628178651088-7243c7b3967d?q=80&w=400&auto=format', aval: '4.8', map: 'https://maps.google.com' },
-    { nome: 'Mecânica Rápida Multimarcas', especialidade: 'Multimarcas', ende: 'Taguatinga Norte, QNM 34 - Brasília/DF', dist: '12.0 km', tipo: 'Oficina Independente', img: 'https://images.unsplash.com/photo-1504151744883-faad76e0362f?q=80&w=400&auto=format', aval: '4.6', map: 'https://maps.google.com' },
+    { nome: 'Auto Center Premium', especialidade: 'BMW Premium', ende: 'Setor de Oficinas Sul (SOF Sul) - Brasília/DF', dist: '6.5 km', tipo: 'Especializada', img: 'https://images.unsplash.com/photo-1625047509248-ec889cbff17f?q=80&w=400&auto=format', aval: '4.8', map: 'https://maps.google.com' },
+    { nome: 'Mecânica Rápida Multimarcas', especialidade: 'Multimarcas', ende: 'Taguatinga Norte, QNM 34 - Brasília/DF', dist: '12.0 km', tipo: 'Oficina Independente', img: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=400&auto=format', aval: '4.6', map: 'https://maps.google.com' },
     { nome: 'Concessionária Chevrolet', especialidade: 'Chevrolet', ende: 'W3 Norte 514/515 - Brasília/DF', dist: '2.1 km', tipo: 'Autorizada', img: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?q=80&w=400&auto=format', aval: '4.7', map: 'https://maps.google.com' },
     { nome: 'Auto Elétrica e Revisão Geral', especialidade: 'Fiat e Hyundai', ende: 'Guará II, QE 40 - Brasília/DF', dist: '8.3 km', tipo: 'Oficina Independente', img: 'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?q=80&w=400&auto=format', aval: '4.5', map: 'https://maps.google.com' },
   ];

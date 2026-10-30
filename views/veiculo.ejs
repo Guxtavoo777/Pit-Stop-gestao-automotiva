@@ -4,8 +4,8 @@
 <main class="main">
 
   <% if (inativo) { %>
-  <div class="alert" style="background:rgba(100,100,100,.08);border-color:rgba(100,100,100,.25);margin-bottom:0">
-    Este veículo está <b>inativo</b>. <a href="/editar-veiculo/<%= v.id %>">Reativar</a>
+  <div class="alert" style="background:rgba(100,100,100,.08);border-color:rgba(100,100,100,.25);margin-bottom:24px">
+    <span>Este veículo está <b>inativo</b> e não entra nos alertas. <a href="/editar-veiculo/<%= v.id %>" style="text-decoration:underline">Reativar</a></span>
   </div>
   <% } %>
 
@@ -41,7 +41,7 @@
     <% } %>
   </div>
 
-  <div class="gchart an an-d4">
+  <div class="gchart an an-d4" style="align-items:start">
     <div class="stat-card"><div class="stat-label">Manutenções</div><div class="stat-value blue"><%= ms.length %></div><div class="stat-detail">registradas</div></div>
     <div class="chart-card"><div class="section-label">Gastos por mês</div><canvas id="gv" height="130"></canvas></div>
   </div>
