@@ -40,4 +40,10 @@
   <a href="/oficinas" class="<%= activePath === '/oficinas' ? 'active' : '' %>"<%- activePath === '/oficinas' ? ' aria-current="page"' : '' %>>Locais</a>
   <a href="/perfil" class="<%= activePath === '/perfil' ? 'active' : '' %>"<%- activePath === '/perfil' ? ' aria-current="page"' : '' %>>Perfil</a>
   <a href="/logout">Sair</a>
+  <div class="fonte-ctrl fonte-ctrl-menu" role="group" aria-label="Tamanho do texto">
+    <span>Tamanho do texto</span>
+    <button type="button" data-fonte="menor" aria-label="Diminuir texto">A−</button>
+    <button type="button" data-fonte="normal" aria-label="Texto no tamanho padrão">A</button>
+    <button type="button" data-fonte="maior" aria-label="Aumentar texto">A+</button>
+  </div>
 </div>

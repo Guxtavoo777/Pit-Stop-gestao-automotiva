@@ -2544,3 +2544,31 @@ td, .stat-value, .spec-row-value, .rev-mini-val { font-variant-numeric: tabular-
 
 /* A barra superior é fixa: ao rolar até um erro ou campo, deixa espaço para ela */
 .erro-resumo, .form-input, .search-input, [id] { scroll-margin-top: 96px; }
+
+/* Campos com ícone: o espaçamento uniforme do tema não pode cobrir o ícone */
+.search-input { padding-left: 52px; }
+.input-pw-wrap .form-input { padding-right: 56px; }
+
+/* ─── CORREÇÕES DA VARREDURA (v7.3) ──────────────────── */
+/* Menu: os 7 itens não cabem abaixo de 1180px → menu recolhido */
+@media (max-width: 1180px) {
+  .nav-items { display: none; }
+  .nav-btn-menu { display: flex; min-width: 44px; min-height: 44px; justify-content: center; }
+  .topnav { min-height: 64px; flex-wrap: nowrap; }
+}
+@media (min-width: 1181px) { .mobile-menu { display: none; } }
+/* No celular, os botões de tamanho do texto ficam dentro do menu */
+.fonte-ctrl-menu { display: none; }
+@media (max-width: 600px) {
+  .topnav .fonte-ctrl { display: none; }
+  .fonte-ctrl-menu { display: flex; align-items: center; gap: 6px; padding: 12px 16px; color: #F2F2F2; font-weight: 700; flex-wrap: wrap; }
+  .fonte-ctrl-menu span { flex-basis: 100%; margin-bottom: 4px; }
+}
+@media (min-width: 601px) and (max-width: 860px) { .topnav .fonte-ctrl { display: flex; } }
+/* Banner do catálogo no marrom do tema, sem marca d'água decorativa */
+.catalog-hero { background: var(--topo); border-radius: var(--r-lg); }
+.catalog-hero::after { display: none; }
+.catalog-hero-sub { color: #EFE6DA; font-size: 1rem; }
+/* Busca do catálogo: contador vai para baixo no celular */
+@media (max-width: 600px) { .search-input-wrap { min-width: 100% !important; } }
+.filter-btn.active { background: var(--marrom); border-color: var(--marrom); color: #fff; }
