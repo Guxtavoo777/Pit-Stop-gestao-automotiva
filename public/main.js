@@ -194,3 +194,44 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   document.addEventListener('DOMContentLoaded', function () { aplicar(atual()); });
 })();
+
+/* ─── ERROS DE FORMULÁRIO (padrão GOV.UK) ──────────
+   Caixa "Há um problema" no topo do formulário, com link para cada campo,
+   e a mensagem junto ao campo. Uso: mostrarErros(container, [{ id, msg }]).
+   Lista vazia limpa os erros. */
+function mostrarErros(container, erros) {
+  var box = container.querySelector('.erro-resumo');
+  if (box) box.remove();
+  container.querySelectorAll('.erro-campo').forEach(function (p) { p.remove(); });
+  container.querySelectorAll('[aria-invalid="true"]').forEach(function (c) {
+    c.removeAttribute('aria-invalid');
+    c.closest('.form-group') && c.closest('.form-group').classList.remove('com-erro');
+  });
+  if (!erros.length) return;
+  box = document.createElement('div');
+  box.className = 'erro-resumo';
+  box.setAttribute('role', 'alert');
+  box.tabIndex = -1;
+  box.innerHTML = '<h2>Há um problema</h2><ul></ul>';
+  erros.forEach(function (e) {
+    var campo = document.getElementById(e.id);
+    var li = document.createElement('li');
+    var a = document.createElement('a');
+    a.href = '#' + e.id; a.textContent = e.msg;
+    a.addEventListener('click', function (ev) { ev.preventDefault(); campo && campo.focus(); });
+    li.appendChild(a); box.querySelector('ul').appendChild(li);
+    if (!campo) return;
+    var p = document.createElement('p');
+    p.className = 'erro-campo'; p.id = e.id + '-erro';
+    p.innerHTML = '<span class="sr-only">Erro: </span>' + e.msg;
+    campo.setAttribute('aria-invalid', 'true');
+    var desc = (campo.getAttribute('aria-describedby') || '').split(' ').filter(function (x) { return x && x !== p.id; });
+    desc.push(p.id); campo.setAttribute('aria-describedby', desc.join(' '));
+    var grupo = campo.closest('.form-group');
+    if (grupo) { grupo.classList.add('com-erro'); var rot = grupo.querySelector('.form-label'); (rot || campo).insertAdjacentElement('afterend', p); }
+    else campo.insertAdjacentElement('beforebegin', p);
+  });
+  container.insertBefore(box, container.firstChild);
+  box.focus();
+  box.scrollIntoView({ block: 'start' });
+}

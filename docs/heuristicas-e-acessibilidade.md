@@ -22,6 +22,14 @@ O redesenho atendeu a dois pedidos da professora. O primeiro foi tirar a "cara d
 
 Em 05/11/2026, as 13 telas foram auditadas com o axe-core 4.10, nas regras WCAG 2.0 A e AA e WCAG 2.1 AA, em 1280 px e em 375 px de largura. Depois das correções, nenhuma violação foi encontrada, nem rolagem lateral no celular. A primeira rodada tinha encontrado 11 tipos de problema: campos sem rótulo, contraste baixo e imagens sem texto alternativo.
 
+## Referências de design
+
+| Referência | O que foi aproveitado |
+| --- | --- |
+| GOV.UK Design System (governo britânico) | Resumo de erros e mensagem junto ao campo, contexto acima do título, foco amarelo de alto contraste, rodapé em todas as telas. |
+| Monzo (banco digital) | Títulos grotescos encorpados (Figtree 800), cantos arredondados, botões em pílula, blocos com fundo de cor suave e um bloco escuro de destaque na página inicial. |
+| Stripe | Números alinhados em coluna nas tabelas e nos indicadores. |
+
 ## As 10 heurísticas
 
 | Heurística | Onde aparece no Pit Stop | O que ainda falta |
@@ -34,5 +42,5 @@ Em 05/11/2026, as 13 telas foram auditadas com o axe-core 4.10, nas regras WCAG 
 | 6. Reconhecer em vez de lembrar | Busca do modelo a partir de duas letras; menu com todas as áreas sempre visível; o item atual do menu fica destacado. | — |
 | 7. Flexibilidade e eficiência | Atalhos no painel (Ver meus carros, Registrar revisão); navegação completa por teclado. | — |
 | 8. Estética e design minimalista | Sem fotos de fundo, degradês, depoimentos ou números de marketing; cada tela mostra só o que serve à tarefa. | — |
-| 9. Ajudar a reconhecer e corrigir erros | Mensagens de erro em português dizendo o que fazer ("As senhas não conferem", "Preencha a Quilometragem para continuar"). | Nos formulários internos, o erro aparece em aviso no canto da tela, e não ao lado do campo. |
+| 9. Ajudar a reconhecer e corrigir erros | Padrão do GOV.UK: ao enviar um formulário com problema, aparece no topo a caixa "Há um problema", com um link para cada campo, e a mensagem fica junto ao campo, com barra vermelha. O foco vai para a caixa, e o leitor de tela anuncia o erro. | — |
 | 10. Ajuda e documentação | Dicas abaixo dos campos (exemplo: "Pelo menos 6 caracteres"); conta de demonstração indicada na tela de acesso; tela Sobre prevista. | Tela Sobre (#103). |

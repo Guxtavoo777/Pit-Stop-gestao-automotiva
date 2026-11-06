@@ -52,7 +52,8 @@ async function salvar(btn) {
     proxima_km: document.getElementById('pk').value || null,
     descricao: document.getElementById('de').value
   };
-  if (!d.data) { toast('Informe a data do serviço!', 'erro'); return; }
+  mostrarErros(document.querySelector('.form-card'), d.data ? [] : [{ id: 'dt', msg: 'Informe a data do serviço' }]);
+  if (!d.data) return;
   withLoading(btn, async function() {
     var res = await fetch('/api/manut/' + VID, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) });
     var j = await res.json();

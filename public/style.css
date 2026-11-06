@@ -5,7 +5,7 @@
    contraste mínimo 7:1 no texto principal e 4,5:1 nos secundários,
    foco do teclado sempre visível, cor nunca é o único sinal de estado.
 ═══════════════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Figtree:wght@700;800&family=IBM+Plex+Mono:wght@500;600&display=swap');
 
 :root {
   /* Papel e tinta */
@@ -2459,3 +2459,88 @@ tr:hover td { background: var(--gray-50); }
   .page-title { font-size: 1.6rem; }
   .fonte-ctrl { display: none; }
 }
+
+/* ─── PADRÕES DO GOV.UK E DO STRIPE (v7.1) ─────────────── */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
+
+/* Resumo de erros no topo do formulário */
+.erro-resumo { border: 4px solid var(--cr); padding: 18px 22px; margin-bottom: 28px; background: #fff; }
+.erro-resumo:focus { outline: 3px solid var(--black); box-shadow: 0 0 0 6px #FFD54A; }
+.erro-resumo h2 { font-size: 1.25rem; margin-bottom: 10px; }
+.erro-resumo ul { list-style: none; }
+.erro-resumo li + li { margin-top: 6px; }
+.erro-resumo a { color: var(--cr) !important; font-weight: 700; text-decoration: underline; }
+
+/* Erro junto ao campo: barra vermelha à esquerda e mensagem em negrito */
+.form-group.com-erro { border-left: 5px solid var(--cr); padding-left: 14px; }
+.erro-campo { color: var(--cr); font-weight: 700; margin: 0 0 8px; }
+.form-input[aria-invalid="true"], .search-input[aria-invalid="true"] { border-color: var(--cr); border-width: 3px; }
+
+/* Contexto acima do título */
+.caption { font-size: 1rem; color: var(--gray-600); margin-bottom: 4px; }
+.caption a { color: var(--gray-600) !important; }
+
+/* Rodapé */
+.rodape { border-top: 2px solid var(--black); margin-top: 24px; }
+.rodape-in { max-width: 1200px; margin: 0 auto; padding: 20px 28px 28px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--gray-700); font-size: .95rem; }
+
+/* Números alinhados em coluna, como em extrato */
+td, .stat-value, .spec-row-value, .rev-mini-val { font-variant-numeric: tabular-nums; }
+
+/* Linhas de texto curtas o bastante para ler sem perder a linha */
+.page-subtitle, .alert, .empty-state-sub, .empty-dashboard-sub { max-width: 68ch; }
+
+/* ─── TOQUES DA MONZO (v7.2) ────────────────────────────
+   Títulos grotescos encorpados, cantos generosos, botões em pílula
+   e blocos com fundo de cor suave. O texto corrido continua em
+   Atkinson Hyperlegible, por causa de quem enxerga pouco. */
+
+:root {
+  --titulo: 'Figtree', 'Atkinson Hyperlegible', Verdana, sans-serif;
+  --r: 20px;
+  --r-lg: 24px;
+  --r-sm: 12px;
+  --r-pill: 9999px;
+  /* fundos suaves, como os blocos da Monzo, em tons de couro */
+  --tom-areia: #F0DFC8;
+  --tom-menta: #DCEEDF;
+  --tom-rosa: #FBEAE7;
+}
+
+/* Títulos */
+.page-title, .lp-abertura h1, .lp-secao h2, .lp-leitura h2, .car-name, .catalog-name, .rev-card-title,
+.perfil-section-title, .empty-dashboard-title, .erro-resumo h2, .lp-modal-logo, .nav-logo, .lp-marca {
+  font-family: var(--titulo);
+  font-weight: 800;
+  letter-spacing: -.015em;
+}
+.page-title { font-size: 2.25rem; }
+.page-header { border-bottom: 0; padding-bottom: 0; }
+
+/* Botões em pílula, com mais respiro */
+.btn, .lp-entrar, .fonte-ctrl button, .filter-btn { border-radius: var(--r-pill); }
+.btn { padding: 10px 24px; }
+
+/* Cartões com cantos generosos, sem linha dura em cima */
+.stat-card, .car-card, .chart-card, .det-info, .form-card, .table-wrap, .rev-card, .catalog-card,
+.perfil-card, .empty-dashboard, .empty-state { border-radius: var(--r-lg); }
+.form-input, .search-input { border-radius: var(--r-sm); }
+.alert { border-radius: var(--r-sm); }
+
+/* Indicadores como blocos de cor suave */
+.stat-card { border: 0; border-top: 0; background: var(--tom-areia); }
+.g4 .stat-card:nth-child(2) { background: #EBDDCB; }
+.g4 .stat-card:last-child { background: var(--tom-menta); }
+.stat-value { font-family: var(--titulo); font-weight: 800; font-size: 2.3rem; }
+
+/* Etiquetas de estado em pílula */
+.tag-status, .rev-status, .pill { border-radius: var(--r-pill); padding: 4px 12px; }
+
+/* Tabela dentro de cartão arredondado */
+.table-wrap { overflow: hidden; }
+
+/* Erro: mantém o padrão GOV.UK (borda forte), só arredonda */
+.erro-resumo { border-radius: var(--r-sm); }
+
+/* A barra superior é fixa: ao rolar até um erro ou campo, deixa espaço para ela */
+.erro-resumo, .form-input, .search-input, [id] { scroll-margin-top: 96px; }

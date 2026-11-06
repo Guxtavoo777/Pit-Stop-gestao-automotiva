@@ -84,7 +84,12 @@ async function salvarRev(btn) {
   var vid = document.getElementById('rv_vid').value;
   var tipo = document.getElementById('rv_tipo').value;
   var data = document.getElementById('rv_data').value;
-  if (!vid || !tipo || !data) { toast('Preencha veículo, tipo e data!', 'erro'); return; }
+  var erros = [];
+  if (!vid) erros.push({ id: 'rv_vid', msg: 'Escolha o veículo' });
+  if (!tipo) erros.push({ id: 'rv_tipo', msg: 'Escolha o tipo de revisão' });
+  if (!data) erros.push({ id: 'rv_data', msg: 'Informe a data da revisão' });
+  mostrarErros(document.querySelector('.form-card'), erros);
+  if (erros.length) return;
   var body = {
     veiculo_id: parseInt(vid), tipo: tipo, data: data,
     km_na_revisao: document.getElementById('rv_km').value || null,
