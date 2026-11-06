@@ -1,7 +1,7 @@
 <%- include('partials/head') %>
 <body>
 <%- include('partials/topnav') %>
-<main class="main">
+<main class="main" id="conteudo">
 
   <div class="page-header an an-d1">
     <div>
@@ -36,11 +36,11 @@
             <div>
               <div class="rev-doc-num"><%= rv.numero_doc %></div>
               <div class="rev-card-title"><%= rv.tipo %></div>
-              <div class="rev-card-sub"><%= v.modelo || '—' %> · <%= v.placa || '—' %> · <%= rv.data %></div>
+              <div class="rev-card-sub"><%= v.modelo || '—' %> · <%= v.placa || '—' %> · <%= dataBR(rv.data) %></div>
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
               <span class="rev-status <%= sitCls %>"><%= s.texto %></span>
-              <div style="font-size:.82rem;color:var(--gray-600)">Oficina: <b><%= rv.oficina || '—' %></b></div>
+              <div style="font-size:.875rem;color:var(--gray-600)">Oficina: <b><%= rv.oficina || '—' %></b></div>
             </div>
           </div>
           <div class="rev-card-body">
@@ -57,7 +57,7 @@
             </div>
           </div>
           <% if (rv.proxima_data) { %>
-          <div class="rev-proxima">Próxima revisão: <b><%= rv.proxima_data %></b><% if (rv.proxima_km) { %> · KM: <b><%= Number(rv.proxima_km).toLocaleString('pt-BR') %></b><% } %></div>
+          <div class="rev-proxima">Próxima revisão: <b><%= dataBR(rv.proxima_data) %></b><% if (rv.proxima_km) { %> · KM: <b><%= Number(rv.proxima_km).toLocaleString('pt-BR') %></b><% } %></div>
           <% } %>
         </div>
       </div>

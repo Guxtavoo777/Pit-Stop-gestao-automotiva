@@ -1,7 +1,7 @@
 <%- include('partials/head') %>
 <body>
 <%- include('partials/topnav') %>
-<main class="main">
+<main class="main" id="conteudo">
 
   <% if (inativo) { %>
   <div class="alert" style="background:rgba(100,100,100,.08);border-color:rgba(100,100,100,.25);margin-bottom:24px">
@@ -64,8 +64,8 @@
               <td style="color:var(--gray-600)"><%= m.oficina || '—' %></td>
               <td><%= m.km_na_revisao ? m.km_na_revisao + ' km' : '—' %></td>
               <td style="font-weight:600">R$ <%= brl(m.custo) %></td>
-              <td style="color:var(--gray-600)"><%= m.data %></td>
-              <td style="color:var(--gray-600)"><%= m.proxima_data || '—' %></td>
+              <td style="color:var(--gray-600)"><%= dataBR(m.data) %></td>
+              <td style="color:var(--gray-600)"><%= m.proxima_data ? dataBR(m.proxima_data) : '—' %></td>
               <td><button class="btn btn-danger btn-sm" onclick="remover(<%= m.id %>)">Remover</button></td>
             </tr>
             <% }) %>
@@ -92,7 +92,7 @@
           <div>
             <div class="rev-doc-num"><%= rv.numero_doc %></div>
             <div class="rev-card-title"><%= rv.tipo %></div>
-            <div class="rev-card-sub"><%= rv.data %> · <%= rv.oficina || '—' %> · Mec: <%= rv.mecanico || '—' %></div>
+            <div class="rev-card-sub"><%= dataBR(rv.data) %> · <%= rv.oficina || '—' %> · Mec: <%= rv.mecanico || '—' %></div>
           </div>
           <span class="rev-status <%= sitCls2 %>"><%= sr.texto %></span>
         </div>
@@ -129,7 +129,7 @@ var gv = document.getElementById('gv');
 if (gv) new Chart(gv, {
   type: 'line',
   data: {
-    labels: <%- JSON.stringify(meses) %>,
+    labels: <%- JSON.stringify(meses.map(dataBR)) %>,
     datasets: [{
       label: 'R$',
       data: <%- JSON.stringify(meses.map(function(m){ return mmap[m]; })) %>,
@@ -145,8 +145,8 @@ if (gv) new Chart(gv, {
     responsive: true,
     plugins: { legend: { display: false } },
     scales: {
-      x: { grid: { display: false }, ticks: { color: '#9a9a9a' } },
-      y: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { color: '#9a9a9a', callback: function(v){ return 'R$' + v; } } }
+      x: { grid: { display: false }, ticks: { color: '#2B2B2B', font: { size: 15, family: 'Atkinson Hyperlegible' } } },
+      y: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { color: '#2B2B2B', font: { size: 15, family: 'Atkinson Hyperlegible' }, callback: function(v){ return 'R$' + v; } } }
     }
   }
 });

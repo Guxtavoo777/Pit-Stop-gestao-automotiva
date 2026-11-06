@@ -1,7 +1,7 @@
 <%- include('partials/head') %>
 <body>
 <%- include('partials/topnav') %>
-<main class="main">
+<main class="main" id="conteudo">
 
   <div class="page-header an an-d1">
     <div>
@@ -27,8 +27,8 @@
       <div class="catalog-body">
         <div class="catalog-name" style="font-size:1.1rem"><%= o.nome %></div>
         <div class="catalog-brand" style="margin-bottom:8px"><%= o.aval %> / 5.0 · <%= o.especialidade %></div>
-        <div style="font-size:0.85rem;color:var(--gray-600);margin-bottom:12px;line-height:1.4">
-          <%= o.ende %><br><span style="color:var(--gray-400)">Aprox. <%= o.dist %></span>
+        <div style="font-size:.875rem;color:var(--gray-600);margin-bottom:12px;line-height:1.4">
+          <%= o.ende %><br><span style="color:var(--gray-600)">Aprox. <%= o.dist %></span>
         </div>
         <div class="catalog-actions">
           <a href="#" class="btn btn-outline btn-sm" style="flex:1" onclick="toast('Abrindo Google Maps para rota...'); event.preventDefault();">Ver Rota</a>

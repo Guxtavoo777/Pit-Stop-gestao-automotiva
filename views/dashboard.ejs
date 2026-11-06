@@ -1,20 +1,17 @@
 <%- include('partials/head') %>
 <body>
 <%- include('partials/topnav') %>
-<main class="main">
+<main class="main" id="conteudo">
 
   <% if (vs.length) { %>
-  <div class="hero an an-d1">
-    <img class="hero-bg" src="<%= heroImg %>" alt="<%= heroModel %>" onerror="this.src='https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=1400&auto=format'">
-    <div class="hero-overlay"></div>
-    <div class="hero-content">
-      <div class="hero-label">Bem-vindo ao Pit Stop</div>
-      <div class="hero-title"><%= heroModel %></div>
-      <div class="hero-sub"><%= heroBrand %> · Sua garagem digital</div>
-      <div style="display:flex;gap:10px;margin-top:22px;flex-wrap:wrap">
-        <a href="/garagem" class="btn btn-primary">Minha Garagem</a>
-        <a href="/explorar" class="btn btn-dark" style="border:1.5px solid rgba(255,255,255,.2)">Explorar Carros BR</a>
-      </div>
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Olá, <%= user %></h1>
+      <p class="page-subtitle"><%= alertas.length ? (alertas.length === 1 ? '1 carro precisa de atenção.' : alertas.length + ' carros precisam de atenção.') : 'Todos os carros ativos estão com a revisão em dia.' %></p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a href="/garagem" class="btn btn-primary">Ver meus carros</a>
+      <a href="/revisao/nova" class="btn btn-ghost">Registrar revisão</a>
     </div>
   </div>
   <% } else { %>
@@ -45,7 +42,7 @@
     <div class="alert<%= s.tipo === 'critico' ? ' critical' : '' %>">
       <span style="width:10px;height:10px;border-radius:50%;background:<%= s.tipo === 'critico' ? 'var(--cr)' : 'var(--or)' %>;display:inline-block;flex-shrink:0"></span>
       <div style="flex:1"><b><%= v.modelo %></b> — <%= s.texto %><br>
-        <span style="font-size:.78rem;color:var(--gray-600)"><%= v.placa ? 'Placa: ' + v.placa : '' %></span></div>
+        <span style="font-size:.875rem;color:var(--gray-600)"><%= v.placa ? 'Placa: ' + v.placa : '' %></span></div>
       <a href="/veiculo/<%= v.id %>" class="btn btn-sm btn-outline">Ver detalhes</a>
     </div>
     <% }) %>
@@ -59,8 +56,8 @@
       <% if (vs.length) { %>
         <% vs.forEach(function(v) { %>
         <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--gray-50);border-radius:var(--r-sm)">
-          <img src="<%= v.img %>" style="width:60px;height:40px;object-fit:cover;border-radius:4px" onerror="this.src='https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=200&auto=format'">
-          <div style="flex:1"><div style="font-weight:700;font-size:.92rem"><%= v.modelo %></div><div style="color:var(--gray-400);font-size:.78rem"><%= v.marca %> · <%= v.ano %></div></div>
+          <img src="<%= v.img %>" alt="" style="width:60px;height:40px;object-fit:cover;border-radius:4px" onerror="this.src='https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=200&auto=format'">
+          <div style="flex:1"><div style="font-weight:700;font-size:.92rem"><%= v.modelo %></div><div style="color:var(--gray-600);font-size:.875rem"><%= v.marca %> · <%= v.ano %></div></div>
           <a href="/veiculo/<%= v.id %>" class="btn btn-sm btn-ghost">Ver</a>
         </div>
         <% }) %>
@@ -97,11 +94,11 @@ var gc = document.getElementById('gc');
 if (gc) new Chart(gc, {
   type: 'bar',
   data: {
-    labels: <%- JSON.stringify(meses) %>,
+    labels: <%- JSON.stringify(meses.map(dataBR)) %>,
     datasets: [{
       label: 'R$',
       data: <%- JSON.stringify(meses.map(function(m){ return mmap[m]; })) %>,
-      backgroundColor: '#111',
+      backgroundColor: '#5C3A1E',
       borderRadius: 5,
       borderSkipped: false
     }]
@@ -110,8 +107,8 @@ if (gc) new Chart(gc, {
     responsive: true,
     plugins: { legend: { display: false } },
     scales: {
-      x: { grid: { display: false }, ticks: { color: '#9a9a9a' } },
-      y: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { color: '#9a9a9a', callback: function(v){ return 'R$' + v; } } }
+      x: { grid: { display: false }, ticks: { color: '#2B2B2B', font: { size: 15, family: 'Atkinson Hyperlegible' } } },
+      y: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { color: '#2B2B2B', font: { size: 15, family: 'Atkinson Hyperlegible' }, callback: function(v){ return 'R$' + v; } } }
     }
   }
 });

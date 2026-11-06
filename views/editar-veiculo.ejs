@@ -1,7 +1,7 @@
 <%- include('partials/head') %>
 <body>
 <%- include('partials/topnav') %>
-<main class="main">
+<main class="main" id="conteudo">
 
   <div class="page-header an an-d1">
     <div>
@@ -15,35 +15,35 @@
 
     <div class="alert" style="margin-bottom:22px;background:rgba(191,135,0,.06);border-color:rgba(191,135,0,.2)">
       <div><b><%= v.marca %> <%= v.modelo %> <%= v.ano %></b> · Motor: <%= v.motor || '—' %> · <%= v.potencia || '—' %>
-      <br><small style="color:var(--gray-400);margin-top:4px;display:block">Os dados técnicos (motor, câmbio, etc.) são fixos do catálogo. Você pode editar os seus dados operacionais abaixo.</small></div>
+      <br><small style="color:var(--gray-600);margin-top:4px;display:block">Os dados técnicos (motor, câmbio, etc.) são fixos do catálogo. Você pode editar os seus dados operacionais abaixo.</small></div>
     </div>
 
     <div class="perfil-section-title">Dados Operacionais</div>
     <div class="g2" style="margin-top:20px">
       <div class="form-group">
-        <label class="form-label">Quilometragem atual *</label>
+        <label class="form-label" for="ev-km">Quilometragem atual *</label>
         <input class="form-input" id="ev-km" type="number" value="<%= v.km || '' %>" placeholder="Ex: 45000">
       </div>
       <div class="form-group">
-        <label class="form-label">Cor</label>
+        <label class="form-label" for="ev-cor">Cor</label>
         <input class="form-input" id="ev-cor" value="<%= v.cor || '' %>" placeholder="Ex: Branco Pérola">
       </div>
       <div class="form-group">
-        <label class="form-label">Placa</label>
-        <input class="form-input" id="ev-placa" value="<%= v.placa || '' %>" placeholder="Ex: ABC-1234" style="text-transform:uppercase">
+        <label class="form-label" for="ev-placa">Placa</label>
+        <input class="form-input" id="ev-placa" value="<%= v.placa || '' %>" placeholder="Ex: ABC-1234" style="">
       </div>
     </div>
     <div class="form-group" style="margin-top:16px">
-      <label class="form-label">Foto do veículo</label>
+      <label class="form-label" for="ev-foto">Foto do veículo</label>
       <div class="upload-area" id="upload-area" onclick="document.getElementById('ev-foto').click()" style="cursor:pointer;border:2px dashed var(--gray-700);border-radius:10px;padding:18px;text-align:center;transition:border-color .2s">
         <img id="foto-preview" src="<%= v.foto || v.img || '' %>" alt="Foto" style="max-height:120px;max-width:100%;border-radius:8px;display:<%= (v.foto || v.img) ? 'block' : 'none' %>;margin:0 auto 8px">
-        <div id="foto-label" style="color:var(--gray-400);font-size:.85rem"><%= (v.foto || v.img) ? 'Clique para trocar a foto' : 'Clique para enviar uma foto (JPG, PNG · máx. 5 MB)' %></div>
+        <div id="foto-label" style="color:var(--gray-600);font-size:.875rem"><%= (v.foto || v.img) ? 'Clique para trocar a foto' : 'Clique para enviar uma foto (JPG, PNG · máx. 5 MB)' %></div>
         <input type="file" id="ev-foto" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="uploadFoto(this)">
       </div>
       <div class="perfil-feedback" id="foto-msg"></div>
     </div>
     <div class="form-group" style="margin-top:16px">
-      <label class="form-label">Observações</label>
+      <label class="form-label" for="ev-obs">Observações</label>
       <textarea class="form-input" id="ev-obs" rows="3" placeholder="Anotações gerais sobre o veículo..."><%= v.observacoes || '' %></textarea>
     </div>
     <div style="display:flex;gap:12px;margin-top:24px">
@@ -54,8 +54,8 @@
   </div>
 
   <div class="form-card an an-d3" style="margin-top:20px;border-color:<%= inativo ? 'rgba(76,175,80,.25)' : 'rgba(229,48,48,.2)' %>">
-    <div class="perfil-section-title" style="color:<%= inativo ? '#4caf50' : '#E53030' %>"><%= inativo ? 'Reativar Veículo' : 'Inativar Veículo' %></div>
-    <p style="font-size:.88rem;color:var(--gray-400);margin:14px 0 20px;line-height:1.7">
+    <div class="perfil-section-title" style="color:<%= inativo ? 'var(--ok)' : 'var(--cr)' %>"><%= inativo ? 'Reativar Veículo' : 'Inativar Veículo' %></div>
+    <p style="font-size:.88rem;color:var(--gray-600);margin:14px 0 20px;line-height:1.7">
       <% if (inativo) { %>
         Este veículo está <b>inativo</b> e não aparece nos alertas e contagens principais. Reative-o para voltar ao normal.
       <% } else { %>

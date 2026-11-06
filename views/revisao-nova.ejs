@@ -1,7 +1,7 @@
 <%- include('partials/head') %>
 <body>
 <%- include('partials/topnav') %>
-<main class="main">
+<main class="main" id="conteudo">
 
   <div class="page-header an an-d1">
     <div>
@@ -18,7 +18,7 @@
     <div class="section-label">Dados da revisão</div>
     <div class="g2">
       <div class="form-group">
-        <label class="form-label">Veículo *</label>
+        <label class="form-label" for="rv_vid">Veículo *</label>
         <select class="form-input" id="rv_vid">
           <% vs.forEach(function(v) { %>
           <option value="<%= v.id %>" <%= v.id === vid ? 'selected' : '' %>><%= v.marca %> <%= v.modelo %> (<%= v.ano %>) — <%= v.placa || 'sem placa' %></option>
@@ -26,23 +26,23 @@
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Tipo de revisão *</label>
+        <label class="form-label" for="rv_tipo">Tipo de revisão *</label>
         <select class="form-input" id="rv_tipo">
           <% tipos.forEach(function(t) { %><option><%= t %></option><% }) %>
         </select>
       </div>
-      <div class="form-group"><label class="form-label">Data da revisão *</label><input class="form-input" type="date" id="rv_data"></div>
-      <div class="form-group"><label class="form-label">KM no momento</label><input class="form-input" type="number" id="rv_km" placeholder="Ex: 45000"></div>
-      <div class="form-group"><label class="form-label">Oficina / Centro automotivo</label><input class="form-input" id="rv_oficina" placeholder="Ex: AutoCenter Brasília"></div>
-      <div class="form-group"><label class="form-label">Mecânico responsável</label><input class="form-input" id="rv_mecanico" placeholder="Ex: João Silva"></div>
-      <div class="form-group"><label class="form-label">Valor total (R$)</label><input class="form-input" type="number" step="0.01" id="rv_custo" placeholder="Ex: 890"></div>
-      <div class="form-group"><label class="form-label">Data da próxima revisão</label><input class="form-input" type="date" id="rv_proxdata"></div>
-      <div class="form-group"><label class="form-label">KM da próxima revisão</label><input class="form-input" type="number" id="rv_proxkm" placeholder="Ex: 55000"></div>
+      <div class="form-group"><label class="form-label" for="rv_data">Data da revisão *</label><input class="form-input" type="date" id="rv_data"></div>
+      <div class="form-group"><label class="form-label" for="rv_km">KM no momento</label><input class="form-input" type="number" id="rv_km" placeholder="Ex: 45000"></div>
+      <div class="form-group"><label class="form-label" for="rv_oficina">Oficina / Centro automotivo</label><input class="form-input" id="rv_oficina" placeholder="Ex: AutoCenter Brasília"></div>
+      <div class="form-group"><label class="form-label" for="rv_mecanico">Mecânico responsável</label><input class="form-input" id="rv_mecanico" placeholder="Ex: João Silva"></div>
+      <div class="form-group"><label class="form-label" for="rv_custo">Valor total (R$)</label><input class="form-input" type="number" step="0.01" id="rv_custo" placeholder="Ex: 890"></div>
+      <div class="form-group"><label class="form-label" for="rv_proxdata">Data da próxima revisão</label><input class="form-input" type="date" id="rv_proxdata"></div>
+      <div class="form-group"><label class="form-label" for="rv_proxkm">KM da próxima revisão</label><input class="form-input" type="number" id="rv_proxkm" placeholder="Ex: 55000"></div>
     </div>
-    <div class="form-group" style="grid-column:1/-1"><label class="form-label">Observações gerais</label><textarea class="form-input" id="rv_obs" rows="2" placeholder="Anote qualquer observação sobre o estado do veículo..."></textarea></div>
+    <div class="form-group" style="grid-column:1/-1"><label class="form-label" for="rv_obs">Observações gerais</label><textarea class="form-input" id="rv_obs" rows="2" placeholder="Anote qualquer observação sobre o estado do veículo..."></textarea></div>
     <div class="divider"></div>
-    <div class="section-label">Checklist de inspeção <span style="font-weight:400;font-size:.75rem;color:var(--gray-400);letter-spacing:0">— marque cada item abaixo</span></div>
-    <div id="chk_progress" style="margin-bottom:16px;font-size:.83rem;color:var(--gray-600)">0 / <%= ITENS_CHECKLIST.length %> itens marcados</div>
+    <div class="section-label">Checklist de inspeção <span style="font-weight:400;font-size:.875rem;color:var(--gray-600);letter-spacing:0">— marque cada item abaixo</span></div>
+    <div id="chk_progress" style="margin-bottom:16px;font-size:.875rem;color:var(--gray-600)">0 / <%= ITENS_CHECKLIST.length %> itens marcados</div>
     <div class="checklist-grid">
       <% ITENS_CHECKLIST.forEach(function(item) { %>
       <div class="checklist-item" id="wrap_<%= item.key %>">

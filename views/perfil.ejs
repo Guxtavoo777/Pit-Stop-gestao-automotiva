@@ -1,7 +1,7 @@
 <%- include('partials/head') %>
 <body>
 <%- include('partials/topnav') %>
-<main class="main">
+<main class="main" id="conteudo">
 
   <div class="page-header an an-d1">
     <div>
@@ -45,23 +45,23 @@
         <div class="perfil-section-title">Dados Pessoais</div>
         <div class="g2" style="margin-top:20px">
           <div class="form-group">
-            <label class="form-label">Nome completo</label>
+            <label class="form-label" for="pf-nome">Nome completo</label>
             <input class="form-input" id="pf-nome" placeholder="Ex: João da Silva" value="<%= u.nome || '' %>">
           </div>
           <div class="form-group">
-            <label class="form-label">Usuário</label>
-            <input class="form-input" value="<%= user %>" disabled style="opacity:.5;cursor:not-allowed">
+            <label class="form-label" for="pf-usuario">Usuário (não pode ser alterado)</label>
+            <input class="form-input" id="pf-usuario" value="<%= user %>" readonly style="background:var(--gray-100);cursor:not-allowed">
           </div>
           <div class="form-group">
-            <label class="form-label">E-mail</label>
+            <label class="form-label" for="pf-email">E-mail</label>
             <input class="form-input" id="pf-email" type="email" placeholder="Ex: joao@email.com" value="<%= u.email || '' %>">
           </div>
           <div class="form-group">
-            <label class="form-label">Telefone / WhatsApp</label>
+            <label class="form-label" for="pf-tel">Telefone / WhatsApp</label>
             <input class="form-input" id="pf-tel" placeholder="Ex: (61) 99999-9999" value="<%= u.telefone || '' %>">
           </div>
           <div class="form-group">
-            <label class="form-label">Cidade / Estado</label>
+            <label class="form-label" for="pf-cidade">Cidade / Estado</label>
             <input class="form-input" id="pf-cidade" placeholder="Ex: Brasília / DF" value="<%= u.cidade || '' %>">
           </div>
         </div>
@@ -75,21 +75,21 @@
         <div class="perfil-section-title">Alterar Senha</div>
         <div class="g2" style="margin-top:20px">
           <div class="form-group" style="grid-column:1/-1">
-            <label class="form-label">Senha atual</label>
+            <label class="form-label" for="pw-atual">Senha atual</label>
             <div class="input-pw-wrap">
               <input class="form-input" id="pw-atual" type="password" placeholder="Digite sua senha atual" autocomplete="current-password">
               <button type="button" class="btn-eye" onclick="togglePw('pw-atual',this)" aria-label="Mostrar senha"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg></button>
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Nova senha</label>
+            <label class="form-label" for="pw-nova">Nova senha</label>
             <div class="input-pw-wrap">
               <input class="form-input" id="pw-nova" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
               <button type="button" class="btn-eye" onclick="togglePw('pw-nova',this)" aria-label="Mostrar senha"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg></button>
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Confirmar nova senha</label>
+            <label class="form-label" for="pw-conf">Confirmar nova senha</label>
             <div class="input-pw-wrap">
               <input class="form-input" id="pw-conf" type="password" placeholder="Repita a nova senha" autocomplete="new-password">
               <button type="button" class="btn-eye" onclick="togglePw('pw-conf',this)" aria-label="Mostrar senha"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg></button>
@@ -107,8 +107,8 @@
       </div>
 
       <div class="form-card an an-d5" style="margin-top:20px;border-color:rgba(229,48,48,.25)">
-        <div class="perfil-section-title" style="color:#E53030">Zona de Perigo</div>
-        <p style="font-size:.88rem;color:var(--gray-400);margin:14px 0 20px;line-height:1.7">Sair da plataforma encerrará sua sessão atual. Todos os seus dados permanecem salvos.</p>
+        <div class="perfil-section-title" style="color:var(--cr)">Zona de Perigo</div>
+        <p style="font-size:.88rem;color:var(--gray-600);margin:14px 0 20px;line-height:1.7">Sair da plataforma encerrará sua sessão atual. Todos os seus dados permanecem salvos.</p>
         <a href="/logout" class="btn btn-danger" style="display:inline-flex;gap:8px;align-items:center">Sair da conta</a>
       </div>
 

@@ -165,3 +165,32 @@ document.addEventListener('DOMContentLoaded', function () {
     if (_confirmCb) { var cb = _confirmCb; _confirmCb = null; cb(); }
   });
 });
+
+/* ─── TAMANHO DO TEXTO (A− / A / A+) ──────────────
+   Escolha guardada no navegador. Aplica antes da pintura via
+   script inline no <head>; aqui só liga os botões. */
+(function () {
+  var NIVEIS = ['100%', '112.5%', '125%', '137.5%'];
+  function atual() {
+    try { var v = localStorage.getItem('pitstop-fonte'); return NIVEIS.indexOf(v) >= 0 ? v : '112.5%'; }
+    catch (e) { return '112.5%'; }
+  }
+  function aplicar(v) {
+    document.documentElement.style.fontSize = v;
+    try { localStorage.setItem('pitstop-fonte', v); } catch (e) {}
+    document.querySelectorAll('[data-fonte]').forEach(function (b) {
+      var alvo = b.getAttribute('data-fonte');
+      b.setAttribute('aria-pressed', String(alvo === 'normal' && v === '112.5%'));
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-fonte]');
+    if (!b) return;
+    var i = NIVEIS.indexOf(atual()), acao = b.getAttribute('data-fonte');
+    if (acao === 'menor') i = Math.max(0, i - 1);
+    else if (acao === 'maior') i = Math.min(NIVEIS.length - 1, i + 1);
+    else i = 1;
+    aplicar(NIVEIS[i]);
+  });
+  document.addEventListener('DOMContentLoaded', function () { aplicar(atual()); });
+})();

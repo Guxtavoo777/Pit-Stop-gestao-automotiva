@@ -94,6 +94,8 @@ app.use((req, res, next) => {
 // ─── APP LOCALS ───────────────────────────────────────────────────────────────
 const brl = v => parseFloat(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 app.locals.brl = brl;
+// Datas no formato brasileiro: 2026-09-25 → 25/09/2026; 2026-09 → 09/2026
+app.locals.dataBR = d => (d ? String(d).slice(0, 10).split('-').reverse().join('/') : '');
 app.locals.situacao = situacao;
 app.locals.situacaoRev = situacaoRev;
 app.locals.gastos = gastos;

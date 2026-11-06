@@ -1,17 +1,23 @@
-<nav class="topnav" id="topnav">
+<a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+<nav class="topnav" id="topnav" aria-label="Navegação principal">
   <a href="/dashboard" class="nav-logo">
     PIT STOP
   </a>
   <ul class="nav-items">
-    <li class="nav-item"><a href="/dashboard" class="<%= activePath === '/dashboard' ? 'active' : '' %>">Dashboard</a></li>
-    <li class="nav-item"><a href="/garagem" class="<%= activePath === '/garagem' ? 'active' : '' %>">Meus Carros</a></li>
-    <li class="nav-item"><a href="/revisoes" class="<%= activePath === '/revisoes' ? 'active' : '' %>">Revisões</a></li>
-    <li class="nav-item"><a href="/cadastro" class="<%= activePath === '/cadastro' ? 'active' : '' %>">Adicionar Carro</a></li>
-    <li class="nav-item"><a href="/explorar" class="<%= activePath === '/explorar' ? 'active' : '' %>">Explorar BR</a></li>
-    <li class="nav-item"><a href="/oficinas" class="<%= activePath === '/oficinas' ? 'active' : '' %>">Locais</a></li>
-    <li class="nav-item"><a href="/perfil" class="<%= activePath === '/perfil' ? 'active' : '' %>">Perfil</a></li>
+    <li class="nav-item"><a href="/dashboard" class="<%= activePath === '/dashboard' ? 'active' : '' %>"<%- activePath === '/dashboard' ? ' aria-current="page"' : '' %>>Dashboard</a></li>
+    <li class="nav-item"><a href="/garagem" class="<%= activePath === '/garagem' ? 'active' : '' %>"<%- activePath === '/garagem' ? ' aria-current="page"' : '' %>>Meus Carros</a></li>
+    <li class="nav-item"><a href="/revisoes" class="<%= activePath === '/revisoes' ? 'active' : '' %>"<%- activePath === '/revisoes' ? ' aria-current="page"' : '' %>>Revisões</a></li>
+    <li class="nav-item"><a href="/cadastro" class="<%= activePath === '/cadastro' ? 'active' : '' %>"<%- activePath === '/cadastro' ? ' aria-current="page"' : '' %>>Adicionar Carro</a></li>
+    <li class="nav-item"><a href="/explorar" class="<%= activePath === '/explorar' ? 'active' : '' %>"<%- activePath === '/explorar' ? ' aria-current="page"' : '' %>>Explorar BR</a></li>
+    <li class="nav-item"><a href="/oficinas" class="<%= activePath === '/oficinas' ? 'active' : '' %>"<%- activePath === '/oficinas' ? ' aria-current="page"' : '' %>>Locais</a></li>
+    <li class="nav-item"><a href="/perfil" class="<%= activePath === '/perfil' ? 'active' : '' %>"<%- activePath === '/perfil' ? ' aria-current="page"' : '' %>>Perfil</a></li>
   </ul>
   <div class="nav-right">
+    <div class="fonte-ctrl" role="group" aria-label="Tamanho do texto">
+      <button type="button" data-fonte="menor" aria-label="Diminuir texto">A−</button>
+      <button type="button" data-fonte="normal" aria-label="Texto no tamanho padrão">A</button>
+      <button type="button" data-fonte="maior" aria-label="Aumentar texto">A+</button>
+    </div>
     <div class="nav-avatar" title="Logado como <%= user %>"><%= user.charAt(0).toUpperCase() %></div>
     <a href="/logout" class="nav-logout-btn" title="Sair da conta" aria-label="Sair">
       <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -26,12 +32,12 @@
   </div>
 </nav>
 <div class="mobile-menu" id="mobileMenu">
-  <a href="/dashboard" class="<%= activePath === '/dashboard' ? 'active' : '' %>">Dashboard</a>
-  <a href="/garagem" class="<%= activePath === '/garagem' ? 'active' : '' %>">Meus Carros</a>
-  <a href="/revisoes" class="<%= activePath === '/revisoes' ? 'active' : '' %>">Revisões</a>
-  <a href="/cadastro" class="<%= activePath === '/cadastro' ? 'active' : '' %>">Adicionar Carro</a>
-  <a href="/explorar" class="<%= activePath === '/explorar' ? 'active' : '' %>">Explorar BR</a>
-  <a href="/oficinas" class="<%= activePath === '/oficinas' ? 'active' : '' %>">Locais</a>
-  <a href="/perfil" class="<%= activePath === '/perfil' ? 'active' : '' %>">Perfil</a>
+  <a href="/dashboard" class="<%= activePath === '/dashboard' ? 'active' : '' %>"<%- activePath === '/dashboard' ? ' aria-current="page"' : '' %>>Dashboard</a>
+  <a href="/garagem" class="<%= activePath === '/garagem' ? 'active' : '' %>"<%- activePath === '/garagem' ? ' aria-current="page"' : '' %>>Meus Carros</a>
+  <a href="/revisoes" class="<%= activePath === '/revisoes' ? 'active' : '' %>"<%- activePath === '/revisoes' ? ' aria-current="page"' : '' %>>Revisões</a>
+  <a href="/cadastro" class="<%= activePath === '/cadastro' ? 'active' : '' %>"<%- activePath === '/cadastro' ? ' aria-current="page"' : '' %>>Adicionar Carro</a>
+  <a href="/explorar" class="<%= activePath === '/explorar' ? 'active' : '' %>"<%- activePath === '/explorar' ? ' aria-current="page"' : '' %>>Explorar BR</a>
+  <a href="/oficinas" class="<%= activePath === '/oficinas' ? 'active' : '' %>"<%- activePath === '/oficinas' ? ' aria-current="page"' : '' %>>Locais</a>
+  <a href="/perfil" class="<%= activePath === '/perfil' ? 'active' : '' %>"<%- activePath === '/perfil' ? ' aria-current="page"' : '' %>>Perfil</a>
   <a href="/logout">Sair</a>
 </div>

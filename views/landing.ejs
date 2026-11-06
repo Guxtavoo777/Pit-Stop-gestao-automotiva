@@ -3,333 +3,226 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="Pit Stop — Plataforma digital de gestão automotiva. Controle sua garagem, histórico de revisões e manutenções em um só lugar.">
-<meta property="og:title" content="Pit Stop — Gestão Automotiva">
-<meta property="og:description" content="Controle sua garagem, histórico de revisões e manutenções em um só lugar.">
-<meta property="og:type" content="website">
+<meta name="description" content="Pit Stop — o histórico de manutenção dos seus carros em um só lugar.">
 <title>Pit Stop — Gestão Automotiva</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23111'/%3E%3Cpath d='M6 20a3 3 0 106 0 3 3 0 00-6 0zm14 0a3 3 0 106 0 3 3 0 00-6 0zM4 20h2m18 0h2M6.5 17l2-7h15l2 7' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300;8..60,400&family=Inter:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/style.css?v=6">
-<script>document.documentElement.classList.add('js')</script>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232A1B10'/%3E%3Cpath d='M6 20a3 3 0 106 0 3 3 0 00-6 0zm14 0a3 3 0 106 0 3 3 0 00-6 0zM4 20h2m18 0h2M6.5 17l2-7h15l2 7' stroke='%23D9A15B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+<script>try{var f=localStorage.getItem('pitstop-fonte');if(f)document.documentElement.style.fontSize=f;}catch(e){}</script>
+<link rel="stylesheet" href="/style.css?v=7">
 <style>
-:root{
-  --ink:#111;--ink-2:#333;--mute:#696969;--line:#e8e8e8;--soft:#f8f8f8;
-  --accent:#111;--accent-2:#333;--attn:#BF8700;
-  --serif:'Source Serif 4',Georgia,serif;--sans:'Inter',system-ui,sans-serif;
-  --ease:cubic-bezier(.165,.84,.44,1);--ease-in:cubic-bezier(.35,0,0,1);
-}
-.lp{margin:0;font-family:var(--sans);color:var(--ink);background:#fff;-webkit-font-smoothing:antialiased}
-.lp h1,.lp h2,.lp h3{font-family:var(--serif);font-weight:300;letter-spacing:-.01em;margin:0}
-.wrap{max-width:1180px;margin:0 auto;padding:0 32px}
-.overline{font-size:.72rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin-bottom:14px}
+.lp { background: var(--paper); color: var(--black); }
+.lp-wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 
-/* Botões em pílula */
-.lp-pill{letter-spacing:0;display:inline-flex;align-items:center;justify-content:center;height:46px;padding:0 26px;border-radius:9999px;font:600 .9rem var(--sans);text-decoration:none;cursor:pointer;border:1px solid transparent;transition:background-color .2s ease-in-out,color .2s ease-in-out,border-color .2s ease-in-out}
-.lp-pill-primary{background:var(--accent);color:#fff}
-.lp-pill-primary:hover{background:var(--accent-2)}
-.lp-hero .lp-pill-primary{background:#fff;color:var(--ink)}
-.lp-hero .lp-pill-primary:hover{background:var(--line)}
-.lp-pill-ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.6)}
-.lp-pill-ghost:hover{background:#fff;color:var(--ink);border-color:#fff}
-.lp-pill-dark{background:transparent;color:var(--ink);border-color:var(--ink)}
-.lp-pill-dark:hover{background:var(--ink);color:#fff}
-.lp-pill:focus-visible{outline:2px solid var(--attn);outline-offset:3px}
+.lp-topo { background: var(--topo); border-bottom: 4px solid var(--caramelo); }
+.lp-topo .lp-wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 68px; flex-wrap: wrap; }
+.lp-marca { color: #fff; font-weight: 700; letter-spacing: .08em; font-size: 1.15rem; text-decoration: none; }
+.lp-topo-acoes { display: flex; align-items: center; gap: 8px; }
+.lp-entrar { min-height: 44px; padding: 8px 18px; border: 2px solid #fff; background: transparent; color: #fff; font: 700 1rem var(--sans); border-radius: var(--r-sm); cursor: pointer; }
+.lp-entrar:hover { background: #fff; color: var(--black); }
 
-/* Navegação */
-.nav{position:fixed;inset:0 0 auto;z-index:200;height:64px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 32px;background:#000;transition:box-shadow .3s}
-.nav.scrolled{box-shadow:0 1px 0 rgba(255,255,255,.08)}
-.nav-links{display:flex;gap:28px}
-.nav-links a{color:rgba(255,255,255,.72);font-size:.85rem;text-decoration:none;transition:color .2s ease-in-out}
-.nav-links a:hover{color:#fff}
-.brand{font-family:var(--serif);font-weight:400;font-size:1.25rem;letter-spacing:.32em;color:#fff;text-decoration:none;padding-left:.32em}
-.nav-login{justify-self:end;display:flex;align-items:center;gap:10px;background:none;border:0;color:#fff;font:500 .85rem var(--sans);cursor:pointer}
-.nav-login .ico{width:30px;height:30px;border-radius:50%;background:#333;display:grid;place-items:center;transition:background-color .2s ease-in-out}
-.nav-login:hover .ico{background:#555}
+.lp-abertura { padding: 56px 0 48px; border-bottom: 2px solid var(--black); }
+.lp-abertura .lp-wrap { display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: center; }
+.lp-abertura h1 { font-size: clamp(2rem, 4.2vw, 2.9rem); line-height: 1.15; font-weight: 700; margin-bottom: 18px; }
+.lp-abertura p { font-size: 1.15rem; color: var(--gray-700); max-width: 34em; margin-bottom: 28px; }
+.lp-acoes { display: flex; gap: 12px; flex-wrap: wrap; }
+.lp-acoes .btn { min-height: 52px; padding: 12px 24px; font-size: 1.05rem; }
 
-/* Hero */
-.lp-hero{position:relative;height:min(92vh,820px);min-height:560px;margin-top:64px;overflow:hidden;background:#000;color:#fff}
-.lp-hero-bg{position:absolute;inset:0;opacity:1;background:url('https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=2000&auto=format') 70% center/cover no-repeat;animation:scaleDown 1.1s var(--ease-in) both}
-.lp-hero::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.82) 0%,rgba(0,0,0,.5) 42%,rgba(0,0,0,0) 72%),linear-gradient(0deg,rgba(0,0,0,.45),transparent 40%)}
-.lp-hero-content{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;justify-content:center;max-width:1180px;margin:0 auto;padding:0 32px}
-.lp-hero h1{font-size:clamp(2.6rem,5.6vw,4.4rem);line-height:1.08;max-width:12ch;animation:moveUp .6s var(--ease) .25s both}
-.lp-hero p{font-size:1.05rem;line-height:1.65;color:rgba(255,255,255,.82);max-width:46ch;margin:22px 0 34px;animation:moveUp .6s var(--ease) .38s both}
-.lp-hero-cta{display:flex;gap:14px;flex-wrap:wrap;animation:moveUp .6s var(--ease) .5s both}
-@keyframes scaleDown{from{transform:scale(1.08)}to{transform:scale(1)}}
-@keyframes moveUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+/* Ficha de exemplo: mostra o produto em vez de prometer */
+.ficha { background: #fff; border: 2px solid var(--black); border-radius: var(--r); }
+.ficha-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 14px 18px; border-bottom: 2px solid var(--black); flex-wrap: wrap; }
+.ficha-cab strong { font-size: 1.15rem; }
+.ficha-cab span { font-family: var(--mono); font-size: .95rem; }
+.ficha table { width: 100%; border-collapse: collapse; }
+.ficha th, .ficha td { padding: 10px 14px; text-align: left; font-size: .95rem; }
+.ficha td.num { font-family: var(--mono); white-space: nowrap; }
+.ficha-rodape { padding: 12px 18px; border-top: 2px solid var(--black); background: #E3F1E6; color: var(--ok); font-weight: 700; }
+.ficha-legenda { font-size: .9rem; color: var(--gray-600); margin-top: 10px; }
 
-/* Seções */
-.sec{padding:112px 0}
-.sec-soft{background:var(--soft)}
-.sec h2{font-size:clamp(1.9rem,3.6vw,2.6rem);line-height:1.15;margin-bottom:20px}
-.lead{font-size:1.05rem;line-height:1.75;color:var(--ink-2);max-width:60ch}
+.lp-secao { padding: 56px 0; border-bottom: 1px solid var(--gray-200); }
+.lp-secao h2 { font-size: 1.7rem; font-weight: 700; margin-bottom: 8px; }
+.lp-secao > .lp-wrap > p { font-size: 1.1rem; color: var(--gray-700); max-width: 40em; margin-bottom: 28px; }
 
-/* Sobre */
-.story{display:grid;grid-template-columns:1.05fr 1fr;gap:80px;align-items:center}
-.story-img{border-radius:12px;overflow:hidden;aspect-ratio:4/3}
-.story-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .8s var(--ease)}
-.story-img:hover img{transform:scale(1.04)}
-.story p{font-size:1rem;line-height:1.8;color:var(--ink-2);margin:0 0 16px}
-.story-meta{display:flex;gap:40px;margin-top:32px;padding-top:24px;border-top:1px solid var(--line);font-size:.85rem;color:var(--mute)}
-.story-meta b{display:block;font-family:var(--serif);font-weight:400;font-size:1.6rem;color:var(--ink);margin-bottom:2px}
+.lista-recursos { display: grid; grid-template-columns: 1fr 1fr; gap: 0 48px; border-top: 2px solid var(--black); }
+.lista-recursos div { padding: 18px 0; border-bottom: 1px solid var(--gray-200); }
+.lista-recursos dt { font-weight: 700; font-size: 1.1rem; margin-bottom: 4px; }
+.lista-recursos dd { color: var(--gray-700); }
 
-/* Funcionalidades */
-.feat-head{display:flex;justify-content:space-between;align-items:end;gap:32px;margin-bottom:48px;flex-wrap:wrap}
-.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-.feat{background:#fff;border-radius:12px;padding:36px 32px 40px;transition:transform .4s var(--ease),box-shadow .4s var(--ease)}
-.feat:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(0,0,0,.08)}
-.feat-n{font-family:var(--serif);font-size:.95rem;color:var(--mute);margin-bottom:40px}
-.feat h3{font-size:1.45rem;margin-bottom:12px}
-.feat p{font-size:.92rem;line-height:1.7;color:var(--ink-2);margin:0}
+.lp-leitura { display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: start; background: #fff; border: 2px solid var(--black); border-radius: var(--r); padding: 28px; }
+.lp-leitura .aa { font-size: 3rem; font-weight: 700; line-height: 1; border: 2px solid var(--black); border-radius: var(--r-sm); padding: 10px 14px; background: var(--caramelo); }
+.lp-leitura ul { margin: 10px 0 0 1.2em; }
+.lp-leitura li { margin-bottom: 6px; }
 
-/* Catálogo */
-.cat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:48px}
-.cat{display:block;border-radius:12px;overflow:hidden;background:#fff;border:1px solid var(--line);color:var(--ink);text-decoration:none;transition:box-shadow .4s var(--ease)}
-.cat:hover{box-shadow:0 18px 40px rgba(0,0,0,.08)}
-.cat-img{aspect-ratio:16/9;overflow:hidden}
-.cat img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s var(--ease)}
-.cat:hover img{transform:scale(1.04)}
-.cat-label{display:flex;justify-content:space-between;align-items:baseline;padding:20px 24px}
-.cat-label h3{font-size:1.7rem}
-.cat-label span{font-size:.82rem;color:var(--mute)}
+.lp-rodape { padding: 32px 0 40px; font-size: .95rem; color: var(--gray-700); }
+.lp-rodape .lp-wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.lp-rodape a { color: var(--marrom); }
 
-/* Propósito */
-.quote{background:#000;color:#fff;padding:128px 0;text-align:center}
-.quote blockquote{font-family:var(--serif);font-weight:300;font-size:clamp(1.7rem,3.4vw,2.6rem);line-height:1.3;max-width:24ch;margin:0 auto 28px}
-.quote p{font-size:1rem;line-height:1.8;color:rgba(255,255,255,.65);max-width:62ch;margin:0 auto}
+/* Janela de acesso */
+.lp-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 500; display: none; align-items: center; justify-content: center; padding: 16px; }
+.lp-modal-overlay.open { display: flex; }
+.lp-modal { background: #fff; border: 2px solid var(--black); border-radius: var(--r); width: 100%; max-width: 460px; max-height: calc(100vh - 32px); overflow: auto; }
+.lp-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; border-bottom: 2px solid var(--black); }
+.lp-modal-logo { font-size: 1.3rem; font-weight: 700; }
+.lp-modal-subtitle { font-size: .95rem; color: var(--gray-600); }
+.lp-modal-close { min-width: 44px; height: 44px; border: 2px solid var(--gray-600); background: #fff; border-radius: var(--r-sm); font: 700 1.1rem var(--sans); cursor: pointer; }
+.lp-modal-tabs { display: flex; border-bottom: 2px solid var(--gray-200); }
+.lp-modal-tab { flex: 1; min-height: 52px; border: 0; background: #fff; font: 700 1rem var(--sans); color: var(--gray-700); cursor: pointer; }
+.lp-modal-tab.active { color: var(--black); box-shadow: inset 0 -4px 0 var(--black); }
+.lp-modal-body { padding: 22px; }
+.lp-modal-hint { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--r-sm); padding: 10px 14px; font-size: .95rem; margin-bottom: 18px; }
+.lp-modal-err { color: var(--cr); font-weight: 700; margin-top: 10px; min-height: 1.5em; }
+.lp-modal-switch { margin-top: 12px; text-align: center; }
+.lp-modal-switch a { color: var(--marrom); }
+.lp-pw-bar { height: 6px; background: var(--gray-100); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+.lp-pw-bar > div { height: 100%; width: 0; }
 
-/* CTA */
-.cta{text-align:center;padding:120px 0}
-.cta h2{margin-bottom:14px}
-.cta .lead{margin:0 auto 36px}
-
-/* Rodapé */
-.foot{background:#000;color:rgba(255,255,255,.7);padding:64px 0 40px;font-size:.85rem}
-.foot-top{display:flex;justify-content:space-between;gap:40px;flex-wrap:wrap;padding-bottom:40px;border-bottom:1px solid #333}
-.foot-links{display:flex;gap:28px;flex-wrap:wrap}
-.foot-links a{text-decoration:none;transition:color .2s ease-in-out}
-.foot-links a:hover{color:#fff}
-.foot-bottom{padding-top:24px;color:rgba(255,255,255,.45);font-size:.78rem}
-
-/* Revelação ao rolar (só com JS ativo) */
-.js .rv{opacity:0}
-.js .rv.visible{opacity:1;animation:moveUp .6s var(--ease) var(--d,0s) backwards}
-
-/* Modal de acesso */
-.lp-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .2s ease-in-out}
-.lp-modal-overlay.open{display:flex}
-.lp-modal-overlay.shown{opacity:1}
-.lp-modal{background:#fff;border-radius:12px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.35);transform:translateY(16px);transition:transform .4s var(--ease)}
-.lp-modal-overlay.shown .lp-modal{transform:none}
-.lp-modal-header{padding:32px 32px 8px;position:relative}
-.lp-modal-logo{font-family:var(--serif);font-size:1.7rem;font-weight:300}
-.lp-modal-subtitle{font-size:.88rem;color:var(--mute);margin-top:6px}
-.lp-modal-close{position:absolute;top:18px;right:18px;background:var(--soft);border:0;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:1rem;color:var(--ink-2);transition:background-color .2s ease-in-out}
-.lp-modal-close:hover{background:var(--line)}
-.lp-modal-tabs{display:flex;gap:6px;margin:20px 32px 0;padding:4px;background:var(--soft);border-radius:9999px}
-.lp-modal-tab{flex:1;height:38px;border:0;border-radius:9999px;background:none;font:500 .85rem var(--sans);color:var(--mute);cursor:pointer;transition:background-color .2s ease-in-out,color .2s ease-in-out}
-.lp-modal-tab.active{background:#000;color:#fff}
-.lp-modal-body{padding:24px 32px 32px}
-.lp-modal-body .form-input{border-radius:8px}
-.lp-modal-body .btn-primary{border-radius:9999px;background:var(--accent);border:0}
-.lp-modal-body .btn-primary:hover{background:var(--accent-2)}
-.lp-modal-hint{background:var(--soft);border-radius:8px;padding:10px 14px;font-size:.8rem;color:var(--ink-2);margin-bottom:20px;line-height:1.5}
-.lp-modal-err{color:#c62828;font-size:.8rem;text-align:center;margin-top:10px;min-height:20px}
-.lp-modal-switch{margin-top:14px;font-size:.82rem;color:var(--mute);text-align:center}
-.lp-modal-switch a{color:var(--ink);font-weight:600}
-.lp-pw-bar{height:4px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:8px}
-.lp-pw-bar>div{height:100%;width:0;border-radius:99px;transition:width .3s,background .3s}
-
-@media (max-width:900px){
-  .nav{grid-template-columns:auto 1fr;padding:0 20px}
-  .nav-links{display:none}
-  .brand{justify-self:start}
-  .wrap,.lp-hero-content{padding:0 20px}
-  .sec{padding:80px 0}
-  .story{grid-template-columns:1fr;gap:40px}
-  .feat-grid{grid-template-columns:1fr}
-  .cat-grid{grid-template-columns:1fr}
-  .lp-hero::after{background:linear-gradient(0deg,rgba(0,0,0,.85) 10%,rgba(0,0,0,.35) 70%)}
-  .lp-hero-content{justify-content:flex-end;padding-bottom:56px}
-}
-@media (max-width:480px){.nav-login .txt{display:none}}
-@media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation:none!important;transition:none!important}
-  .js .rv{opacity:1}
+@media (max-width: 860px) {
+  .lp-abertura .lp-wrap, .lista-recursos, .lp-leitura { grid-template-columns: 1fr; }
+  .lp-abertura { padding-top: 36px; }
 }
 </style>
 </head>
 <body class="lp">
+<a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
 
-<nav class="nav" id="lp-nav">
-  <div class="nav-links">
-    <a href="#sobre">Sobre</a>
-    <a href="#funcionalidades">Funcionalidades</a>
-    <a href="#catalogo">Catálogo</a>
-  </div>
-  <a href="/" class="brand">PIT STOP</a>
-  <button class="nav-login" onclick="abrirLogin()">
-    <span class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><circle cx="12" cy="8" r="4.5"/><path d="M3 21c0-4.4 4-7.5 9-7.5s9 3.1 9 7.5z"/></svg></span>
-    <span class="txt">Entrar</span>
-  </button>
-</nav>
-
-<header class="lp-hero">
-  <div class="lp-hero-bg" role="img" aria-label="Carro esportivo em estrada ao entardecer"></div>
-  <div class="lp-hero-content">
-    <h1>Sua garagem, digital e inteligente.</h1>
-    <p>O histórico completo de revisões, manutenções e gastos de todos os seus veículos, em um único lugar, com laudos digitais e alertas automáticos.</p>
-    <div class="lp-hero-cta">
-      <button class="lp-pill lp-pill-primary" onclick="abrirLogin()">Acessar minha garagem</button>
-      <a href="#sobre" class="lp-pill lp-pill-ghost">Saiba mais</a>
+<header class="lp-topo">
+  <div class="lp-wrap">
+    <a href="/" class="lp-marca">PIT STOP</a>
+    <div class="lp-topo-acoes">
+      <div class="fonte-ctrl" role="group" aria-label="Tamanho do texto">
+        <button type="button" data-fonte="menor" aria-label="Diminuir texto">A−</button>
+        <button type="button" data-fonte="normal" aria-label="Texto no tamanho padrão">A</button>
+        <button type="button" data-fonte="maior" aria-label="Aumentar texto">A+</button>
+      </div>
+      <button class="lp-entrar" onclick="abrirLogin()">Entrar</button>
     </div>
   </div>
 </header>
 
-<section class="sec" id="sobre">
-  <div class="wrap story">
-    <div class="story-img rv">
-      <img src="https://images.unsplash.com/photo-1625047509248-ec889cbff17f?q=80&w=1200&auto=format" alt="Motor de um carro com o capô aberto" loading="lazy">
-    </div>
-    <div class="rv" style="--d:.1s">
-      <div class="overline">Nossa história</div>
-      <h2>Nascemos de uma frustração real.</h2>
-      <p>Cadernos perdidos, recibos rasgados, datas esquecidas. Quantas vezes você foi trocar o óleo sem saber quando foi a última vez? Ou perdeu a garantia por não ter o comprovante?</p>
-      <p>O Pit Stop surgiu como projeto do CEUB para resolver exatamente isso: tornar a gestão automotiva simples, digital e acessível para qualquer pessoa.</p>
-      <div class="story-meta">
-        <div><b>2026</b>Ano de fundação</div>
-        <div><b>CEUB</b>Projeto Integrador</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="sec sec-soft" id="funcionalidades">
-  <div class="wrap">
-    <div class="feat-head rv">
+<main id="conteudo">
+  <section class="lp-abertura" aria-labelledby="titulo">
+    <div class="lp-wrap">
       <div>
-        <div class="overline">Funcionalidades</div>
-        <h2>Tudo que sua garagem precisa.</h2>
+        <h1 id="titulo">O caderno de manutenção do seu carro, sem nota fiscal perdida.</h1>
+        <p>Anote cada troca de óleo, revisão e conserto. O Pit Stop guarda o histórico, soma quanto você já gastou e avisa quando a próxima revisão está chegando.</p>
+        <div class="lp-acoes">
+          <button class="btn btn-primary" onclick="abrirLogin('cadastro')">Criar conta grátis</button>
+          <button class="btn btn-ghost" onclick="abrirLogin()">Já tenho conta</button>
+        </div>
       </div>
-      <p class="lead" style="max-width:42ch;margin:0">Uma plataforma para quem leva a sério o cuidado com os próprios veículos.</p>
-    </div>
-    <div class="feat-grid">
-      <div class="feat rv"><div class="feat-n">01</div><h3>Garagem digital</h3><p>Todos os seus veículos com motor, potência, câmbio, quilometragem e foto.</p></div>
-      <div class="feat rv" style="--d:.08s"><div class="feat-n">02</div><h3>Laudos de revisão</h3><p>Checklist de 20 itens e documento numerado (REV-AAAA-NNN) para imprimir ou compartilhar.</p></div>
-      <div class="feat rv" style="--d:.16s"><div class="feat-n">03</div><h3>Histórico de manutenções</h3><p>Troca de óleo, freios, pneus e qualquer serviço, com custo, oficina e próxima data.</p></div>
-      <div class="feat rv"><div class="feat-n">04</div><h3>Alertas de revisão</h3><p>Aviso automático quando uma revisão está próxima do prazo ou atrasada.</p></div>
-      <div class="feat rv" style="--d:.08s"><div class="feat-n">05</div><h3>Painel de gastos</h3><p>Gastos por mês e o total investido em cada veículo, num só painel.</p></div>
-      <div class="feat rv" style="--d:.16s"><div class="feat-n">06</div><h3>Catálogo brasileiro</h3><p>27 modelos populares no Brasil com motor, consumo, porta-malas e preço.</p></div>
-    </div>
-  </div>
-</section>
 
-<section class="sec" id="catalogo">
-  <div class="wrap">
-    <div class="rv">
-      <div class="overline">Catálogo</div>
-      <h2>Comece pelo seu modelo.</h2>
-      <p class="lead">Cadastre seu carro a partir da ficha técnica dos modelos mais vendidos do país.</p>
+      <figure>
+        <div class="ficha" role="group" aria-label="Exemplo de ficha de manutenção">
+          <div class="ficha-cab"><strong>Toyota Corolla 2022</strong><span>Placa TCU1A23</span></div>
+          <table>
+            <thead><tr><th scope="col">Data</th><th scope="col">Serviço</th><th scope="col">Km</th><th scope="col">Valor</th></tr></thead>
+            <tbody>
+              <tr><td class="num">16/08/2026</td><td>Troca de óleo</td><td class="num">35.000</td><td class="num">R$ 420</td></tr>
+              <tr><td class="num">25/09/2026</td><td>Pastilhas de freio</td><td class="num">37.000</td><td class="num">R$ 680</td></tr>
+            </tbody>
+          </table>
+          <div class="ficha-rodape">✓ Em dia — próxima revisão em 12/02/2027</div>
+        </div>
+        <figcaption class="ficha-legenda">Exemplo de como fica o histórico de um carro no Pit Stop.</figcaption>
+      </figure>
     </div>
-    <div class="cat-grid">
-      <a class="cat rv" href="#" onclick="abrirLogin();return false;"><div class="cat-img"><img src="/images/hb20.jpg" alt="Hyundai HB20" loading="lazy"></div><div class="cat-label"><h3>Hatches</h3><span>8 modelos</span></div></a>
-      <a class="cat rv" style="--d:.08s" href="#" onclick="abrirLogin();return false;"><div class="cat-img"><img src="/images/corolla.jpg" alt="Toyota Corolla" loading="lazy"></div><div class="cat-label"><h3>Sedãs</h3><span>6 modelos</span></div></a>
-      <a class="cat rv" href="#" onclick="abrirLogin();return false;"><div class="cat-img"><img src="/images/compass.jpg" alt="Jeep Compass" loading="lazy"></div><div class="cat-label"><h3>SUVs</h3><span>10 modelos</span></div></a>
-      <a class="cat rv" style="--d:.08s" href="#" onclick="abrirLogin();return false;"><div class="cat-img"><img src="/images/hilux.jpg" alt="Toyota Hilux" loading="lazy"></div><div class="cat-label"><h3>Picapes</h3><span>3 modelos</span></div></a>
+  </section>
+
+  <section class="lp-secao" aria-labelledby="t-recursos">
+    <div class="lp-wrap">
+      <h2 id="t-recursos">O que o Pit Stop guarda para você</h2>
+      <p>Tudo fica organizado por carro. Quem tem mais de um veículo vê cada um com o seu calendário.</p>
+      <dl class="lista-recursos">
+        <div><dt>Garagem</dt><dd>Seus carros com placa, ano, quilometragem e foto. Escolha o modelo no catálogo e a ficha técnica vem preenchida.</dd></div>
+        <div><dt>Manutenções</dt><dd>Cada serviço com data, oficina, quilometragem e valor, do mais recente para o mais antigo.</dd></div>
+        <div><dt>Revisões com laudo</dt><dd>Checklist de 20 itens e um laudo numerado para imprimir e mostrar na hora de vender o carro.</dd></div>
+        <div><dt>Avisos de revisão</dt><dd>O carro aparece como em dia, revisão próxima (30 dias) ou atrasada, sempre escrito, não só pela cor.</dd></div>
+        <div><dt>Gastos</dt><dd>Quanto cada carro custou por mês e no total, somado a partir do que você registrou.</dd></div>
+        <div><dt>Catálogo</dt><dd>27 modelos populares no Brasil, com motor, consumo e porta-malas.</dd></div>
+      </dl>
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="quote" id="proposito">
-  <div class="wrap">
-    <blockquote class="rv">Cuidar bem do seu carro começa com a informação certa, no momento certo.</blockquote>
-    <p class="rv" style="--d:.1s">Não importa se o carro é popular ou premium: todo dono merece conhecer o histórico completo do veículo, evitar surpresas mecânicas e ter controle dos próprios gastos.</p>
-  </div>
-</section>
-
-<section class="sec cta">
-  <div class="wrap rv">
-    <h2>Pronto para organizar sua garagem?</h2>
-    <p class="lead">Acesso gratuito. Comece em poucos minutos.</p>
-    <button class="lp-pill lp-pill-dark" onclick="abrirLogin('cadastro')">Criar minha conta</button>
-  </div>
-</section>
-
-<footer class="foot">
-  <div class="wrap">
-    <div class="foot-top">
-      <a href="/" class="brand">PIT STOP</a>
-      <div class="foot-links">
-        <a href="#sobre">Sobre</a>
-        <a href="#funcionalidades">Funcionalidades</a>
-        <a href="#catalogo">Catálogo</a>
-        <a href="#" onclick="abrirLogin();return false;">Entrar</a>
+  <section class="lp-secao" aria-labelledby="t-leitura">
+    <div class="lp-wrap">
+      <div class="lp-leitura">
+        <div class="aa" aria-hidden="true">A+</div>
+        <div>
+          <h2 id="t-leitura">Fácil de ler, para todo mundo</h2>
+          <ul>
+            <li>Texto grande e fonte Atkinson Hyperlegible, criada para pessoas com baixa visão.</li>
+            <li>Botões A−, A e A+ no topo para ajustar o tamanho do texto; a escolha fica guardada.</li>
+            <li>Contraste alto e foco do teclado sempre visível.</li>
+            <li>Funciona no celular e no computador, e com leitor de tela.</li>
+          </ul>
+        </div>
       </div>
     </div>
-    <div class="foot-bottom">© 2026 Pit Stop · Gestão Automotiva · Projeto Integrador CEUB</div>
+  </section>
+</main>
+
+<footer class="lp-rodape">
+  <div class="lp-wrap">
+    <span>Pit Stop · Projeto Integrador 2 · CEUB · 2026</span>
+    <span>Nathan Gerken, Gustavo Pereira de Sousa e Bernardo Gontijo</span>
   </div>
 </footer>
 
 <div class="lp-modal-overlay" id="loginModal" onclick="fecharLogin(event)">
   <div class="lp-modal" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="lp-modal-title">
     <div class="lp-modal-header">
-      <div class="lp-modal-logo" id="lp-modal-title">Pit Stop</div>
-      <div class="lp-modal-subtitle" id="lp-modal-sub">Acesse sua garagem digital</div>
+      <div>
+        <div class="lp-modal-logo" id="lp-modal-title">Pit Stop</div>
+        <div class="lp-modal-subtitle" id="lp-modal-sub">Acesse sua garagem</div>
+      </div>
       <button class="lp-modal-close" onclick="fecharLogin(null)" aria-label="Fechar">✕</button>
     </div>
-    <div class="lp-modal-tabs">
-      <button class="lp-modal-tab active" id="tab-login" onclick="mudarAba('login')">Entrar</button>
-      <button class="lp-modal-tab" id="tab-cadastro" onclick="mudarAba('cadastro')">Criar conta</button>
+    <div class="lp-modal-tabs" role="tablist">
+      <button class="lp-modal-tab active" id="tab-login" role="tab" onclick="mudarAba('login')">Entrar</button>
+      <button class="lp-modal-tab" id="tab-cadastro" role="tab" onclick="mudarAba('cadastro')">Criar conta</button>
     </div>
     <div class="lp-modal-body" id="painel-login">
-      <div class="lp-modal-hint">Demonstração acadêmica: use <b>aluno</b> / <b>senha123</b></div>
+      <div class="lp-modal-hint">Para testar, use a conta de demonstração: <b>aluno</b> / <b>senha123</b></div>
       <div class="form-group">
         <label class="form-label" for="lp-us">Usuário</label>
-        <input class="form-input" id="lp-us" placeholder="aluno" autocomplete="username">
+        <input class="form-input" id="lp-us" autocomplete="username">
       </div>
       <div class="form-group">
         <label class="form-label" for="lp-pw">Senha</label>
-        <input class="form-input" type="password" id="lp-pw" placeholder="••••••••" autocomplete="current-password">
+        <input class="form-input" type="password" id="lp-pw" autocomplete="current-password">
       </div>
-      <button class="btn btn-primary btn-full" id="lp-loginbtn" style="height:48px;font-size:.95rem;margin-top:4px" onclick="fazerLogin()">Entrar</button>
-      <div class="lp-modal-err" id="lp-err"></div>
+      <button class="btn btn-primary btn-full" id="lp-loginbtn" onclick="fazerLogin()">Entrar</button>
+      <div class="lp-modal-err" id="lp-err" role="alert"></div>
       <p class="lp-modal-switch">Não tem conta? <a href="#" onclick="mudarAba('cadastro');return false;">Criar conta grátis</a></p>
     </div>
     <div class="lp-modal-body" id="painel-cadastro" style="display:none">
       <div class="form-group">
         <label class="form-label" for="cad-nome">Nome completo</label>
-        <input class="form-input" id="cad-nome" placeholder="Ex: João da Silva" autocomplete="name">
+        <input class="form-input" id="cad-nome" autocomplete="name">
       </div>
       <div class="form-group">
-        <label class="form-label" for="cad-us">Usuário <span style="color:var(--gray-400);font-weight:400;text-transform:none">(sem espaços, 3-20 caracteres)</span></label>
-        <input class="form-input" id="cad-us" placeholder="Ex: joaosilva" autocomplete="username">
+        <label class="form-label" for="cad-us">Usuário</label>
+        <input class="form-input" id="cad-us" autocomplete="username" aria-describedby="cad-us-ajuda">
+        <div id="cad-us-ajuda" class="lp-modal-subtitle">Sem espaços, de 3 a 20 caracteres.</div>
       </div>
       <div class="form-group">
-        <label class="form-label" for="cad-pw">Senha <span style="color:var(--gray-400);font-weight:400;text-transform:none">(mín. 6 caracteres)</span></label>
-        <input class="form-input" type="password" id="cad-pw" placeholder="••••••••" autocomplete="new-password">
+        <label class="form-label" for="cad-pw">Senha</label>
+        <input class="form-input" type="password" id="cad-pw" autocomplete="new-password" aria-describedby="cad-pw-ajuda">
+        <div id="cad-pw-ajuda" class="lp-modal-subtitle">Pelo menos 6 caracteres.</div>
       </div>
       <div class="form-group">
         <label class="form-label" for="cad-pw2">Confirmar senha</label>
-        <input class="form-input" type="password" id="cad-pw2" placeholder="••••••••" autocomplete="new-password">
+        <input class="form-input" type="password" id="cad-pw2" autocomplete="new-password">
       </div>
-      <div class="lp-pw-bar"><div id="lp-pw-fill"></div></div>
-      <button class="btn btn-primary btn-full" id="lp-cadbtn" style="height:48px;font-size:.95rem;margin-top:12px" onclick="fazerCadastro()">Criar minha conta</button>
-      <div class="lp-modal-err" id="cad-err"></div>
+      <div class="lp-pw-bar" aria-hidden="true"><div id="lp-pw-fill"></div></div>
+      <button class="btn btn-primary btn-full" id="lp-cadbtn" style="margin-top:14px" onclick="fazerCadastro()">Criar minha conta</button>
+      <div class="lp-modal-err" id="cad-err" role="alert"></div>
       <p class="lp-modal-switch">Já tem conta? <a href="#" onclick="mudarAba('login');return false;">Entrar</a></p>
     </div>
   </div>
 </div>
 
 <div id="toasts"></div>
-<script src="/main.js?v=4"></script>
+<script src="/main.js?v=7"></script>
 <script>
-window.addEventListener('scroll',function(){document.getElementById('lp-nav').classList.toggle('scrolled',window.scrollY>40);},{passive:true});
-var obs=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}});},{threshold:.12});
-document.querySelectorAll('.rv').forEach(function(el){obs.observe(el);});
-document.querySelectorAll('a[href^="#"]').forEach(function(a){a.addEventListener('click',function(e){var h=this.getAttribute('href');if(h.length<2)return;var t=document.querySelector(h);if(t){e.preventDefault();window.scrollTo({top:t.getBoundingClientRect().top+window.scrollY-64,behavior:'smooth'});}});});
-
 function abrirLogin(aba){
   var m=document.getElementById('loginModal');
   m.classList.add('open');
