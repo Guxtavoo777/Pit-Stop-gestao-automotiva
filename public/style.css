@@ -7,7 +7,13 @@
 ═══════════════════════════════════════════════════════ */
 @import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Figtree:wght@700;800&family=IBM+Plex+Mono:wght@500;600&display=swap');
 
+@font-face {
+  font-family: 'Archivo Variable'; font-style: normal; font-display: swap; font-weight: 100 900; font-stretch: 62% 125%;
+  src: url(/fonts/archivo-latin-standard-normal.woff2) format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 :root {
+  --display: 'Archivo Variable', 'Atkinson Hyperlegible', Verdana, sans-serif;
   /* Papel e tinta */
   --paper: #F4F0E6;
   --white: #ffffff;
@@ -15,7 +21,7 @@
   --gray-50: #F8F6F0;
   --gray-100: #EEEAE0;
   --gray-200: #CFC7B6;
-  --gray-400: #767676;
+  --gray-400: #666666;
   --gray-600: #474747;
   --gray-700: #3A3A3A;
   --gray-800: #2B2B2B;
@@ -2572,3 +2578,43 @@ td, .stat-value, .spec-row-value, .rev-mini-val { font-variant-numeric: tabular-
 /* Busca do catálogo: contador vai para baixo no celular */
 @media (max-width: 600px) { .search-input-wrap { min-width: 100% !important; } }
 .filter-btn.active { background: var(--marrom); border-color: var(--marrom); color: #fff; }
+
+/* ─── ARQUITETURA DA LANDING APLICADA AO APP (v8) ───────────
+   Mesmas curvas e o mesmo ritmo da landing: entrada curta e por tempo,
+   botões que afundam ao clicar, hover só onde há mouse. */
+:root {
+  --ob-out: cubic-bezier(.16, 1, .3, 1);
+  --ob-in: cubic-bezier(.7, 0, .84, 0);
+  --ob-io: cubic-bezier(.86, 0, .07, 1);
+}
+@keyframes ob-sobe { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.main > * { animation: ob-sobe .6s var(--ob-out) both; }
+.main > *:nth-child(2) { animation-delay: .06s; }
+.main > *:nth-child(3) { animation-delay: .12s; }
+.main > *:nth-child(n+4) { animation-delay: .18s; }
+.btn { transition: background-color .25s var(--ob-out), color .25s var(--ob-out), border-color .25s var(--ob-out), transform .15s; }
+.btn:active { transform: scale(.98) !important; }
+.stat-card, .car-card, .rev-card, .catalog-card { transition: border-color .25s var(--ob-out), transform .35s var(--ob-out); }
+@media (hover: hover) {
+  .stat-card:hover, .car-card:hover, .rev-card:hover, .catalog-card:hover { transform: translateY(-3px); }
+  .nav-item > a { transition: background-color .25s var(--ob-out), color .25s var(--ob-out); }
+}
+.mobile-menu { transition: clip-path .5s var(--ob-io), opacity .2s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .main > * { animation: none; }
+  .stat-card:hover, .car-card:hover, .rev-card:hover, .catalog-card:hover { transform: none; }
+}
+
+/* Títulos no estilo da landing: Archivo larga, só nos títulos curtos. O texto corrido segue em Atkinson. */
+.nav-logo, .page-title { font-family: var(--display); font-stretch: 118%; font-weight: 850; text-transform: uppercase; letter-spacing: .01em; }
+
+/* ─── BARRA SUPERIOR ARREDONDADA (mesma estética da landing) ─────────── */
+.topnav { top: 12px; margin: 12px 16px 0; padding: 6px 14px 6px 28px; min-height: 64px; border: 0; border-radius: 32px; box-shadow: 0 8px 24px rgba(42, 27, 16, .25); }
+.topnav.scrolled { background: rgba(42, 27, 16, .97); }
+.nav-item > a { min-height: 44px; padding: 0 16px; border-radius: 999px; transition: background-color .25s var(--ob-out), color .25s var(--ob-out); }
+.nav-item > a.active { background: var(--caramelo); color: var(--black); box-shadow: none; }
+.nav-item > a.active:hover { background: var(--caramelo); color: var(--black); }
+.nav-logout-btn { border-radius: 50%; }
+.nav-btn-menu { border-radius: 50%; }
+.mobile-menu { top: 84px; left: 12px; right: 12px; border-radius: 24px; border: 0; }
+@media (max-width: 860px) { .topnav { margin: 8px 8px 0; top: 8px; padding: 6px 10px 6px 20px; } .mobile-menu { top: 78px; left: 8px; right: 8px; } }

@@ -2,116 +2,110 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Pit Stop — o histórico de manutenção dos seus carros em um só lugar.">
+<meta name="theme-color" content="#5C3A1E">
 <title>Pit Stop — Gestão Automotiva</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232A1B10'/%3E%3Cpath d='M6 20a3 3 0 106 0 3 3 0 00-6 0zm14 0a3 3 0 106 0 3 3 0 00-6 0zM4 20h2m18 0h2M6.5 17l2-7h15l2 7' stroke='%23D9A15B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
-<script>try{var f=localStorage.getItem('pitstop-fonte');if(f)document.documentElement.style.fontSize=f;}catch(e){}</script>
-<link rel="stylesheet" href="/style.css?v=7">
-<style>
-.lp { background: var(--paper); color: var(--black); }
-.lp-wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
-
-.lp-topo { background: var(--topo); border-bottom: 4px solid var(--caramelo); }
-.lp-topo .lp-wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 68px; flex-wrap: wrap; }
-.lp-marca { color: #fff; font-weight: 700; letter-spacing: .08em; font-size: 1.15rem; text-decoration: none; }
-.lp-topo-acoes { display: flex; align-items: center; gap: 8px; }
-.lp-entrar { min-height: 44px; padding: 8px 18px; border: 2px solid #fff; background: transparent; color: #fff; font: 700 1rem var(--sans); border-radius: var(--r-sm); cursor: pointer; }
-.lp-entrar:hover { background: #fff; color: var(--black); }
-
-.lp-abertura { padding: 64px 0 56px; }
-.lp-abertura .lp-wrap { display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: center; }
-.lp-abertura h1 { font-size: clamp(2.2rem, 4.6vw, 3.3rem); line-height: 1.1; margin-bottom: 20px; }
-.lp-abertura p { font-size: 1.15rem; color: var(--gray-700); max-width: 34em; margin-bottom: 28px; }
-.lp-acoes { display: flex; gap: 12px; flex-wrap: wrap; }
-.lp-acoes .btn { min-height: 52px; padding: 12px 24px; font-size: 1.05rem; }
-
-/* Ficha de exemplo: mostra o produto em vez de prometer */
-.ficha { background: #fff; border: 2px solid var(--black); border-radius: 24px; overflow: hidden; }
-.ficha-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 14px 18px; border-bottom: 2px solid var(--black); flex-wrap: wrap; }
-.ficha-cab strong { font-size: 1.15rem; }
-.ficha-cab span { font-family: var(--mono); font-size: .95rem; }
-.ficha table { width: 100%; border-collapse: collapse; }
-.ficha th, .ficha td { padding: 10px 14px; text-align: left; font-size: .95rem; }
-.ficha td.num { font-family: var(--mono); white-space: nowrap; }
-.ficha-rodape { padding: 12px 18px; border-top: 2px solid var(--black); background: #E3F1E6; color: var(--ok); font-weight: 700; }
-.ficha-legenda { font-size: .9rem; color: var(--gray-600); margin-top: 10px; }
-
-.lp-secao { padding: 48px 0; }
-.lp-secao h2 { font-size: 1.7rem; font-weight: 700; margin-bottom: 8px; }
-.lp-secao > .lp-wrap > p { font-size: 1.1rem; color: var(--gray-700); max-width: 40em; margin-bottom: 28px; }
-
-.lista-recursos { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-.lista-recursos div { padding: 24px; background: #fff; border: 1px solid var(--gray-200); border-radius: 24px; }
-.lista-recursos dt { font-weight: 700; font-size: 1.1rem; margin-bottom: 4px; }
-.lista-recursos dd { color: var(--gray-700); }
-
-.lp-leitura { display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: start; background: var(--topo); color: #fff; border-radius: 32px; padding: 40px; }
-.lp-leitura li { color: #F4EDE4; }
-.lp-leitura h2 { color: #fff; }
-.lp-leitura .aa { font-family: var(--titulo); font-size: 3rem; font-weight: 800; line-height: 1; border-radius: 20px; padding: 14px 18px; background: var(--caramelo); color: var(--black); }
-.lp-leitura ul { margin: 10px 0 0 1.2em; }
-.lp-leitura li { margin-bottom: 6px; }
-
-.lp-rodape { padding: 32px 0 40px; font-size: .95rem; color: var(--gray-700); }
-.lp-rodape .lp-wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-.lp-rodape a { color: var(--marrom); }
-
-/* Janela de acesso */
-.lp-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 500; display: none; align-items: center; justify-content: center; padding: 16px; }
-.lp-modal-overlay.open { display: flex; }
-.lp-modal { background: #fff; border: 2px solid var(--black); border-radius: var(--r); width: 100%; max-width: 460px; max-height: calc(100vh - 32px); overflow: auto; }
-.lp-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; border-bottom: 2px solid var(--black); }
-.lp-modal-logo { font-size: 1.3rem; font-weight: 700; }
-.lp-modal-subtitle { font-size: .95rem; color: var(--gray-600); }
-.lp-modal-close { min-width: 44px; height: 44px; border: 2px solid var(--gray-600); background: #fff; border-radius: var(--r-sm); font: 700 1.1rem var(--sans); cursor: pointer; }
-.lp-modal-tabs { display: flex; border-bottom: 2px solid var(--gray-200); }
-.lp-modal-tab { flex: 1; min-height: 52px; border: 0; background: #fff; font: 700 1rem var(--sans); color: var(--gray-700); cursor: pointer; }
-.lp-modal-tab.active { color: var(--black); box-shadow: inset 0 -4px 0 var(--black); }
-.lp-modal-body { padding: 22px; }
-.lp-modal-hint { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--r-sm); padding: 10px 14px; font-size: .95rem; margin-bottom: 18px; }
-.lp-modal-err { color: var(--cr); font-weight: 700; margin-top: 10px; min-height: 1.5em; }
-.lp-modal-switch { margin-top: 12px; text-align: center; }
-.lp-modal-switch a { color: var(--marrom); }
-.lp-pw-bar { height: 6px; background: var(--gray-100); border-radius: 3px; overflow: hidden; margin-top: 8px; }
-.lp-pw-bar > div { height: 100%; width: 0; }
-
-@media (max-width: 860px) {
-  .lp-abertura .lp-wrap, .lista-recursos, .lp-leitura { grid-template-columns: 1fr; }
-  .lp-leitura { padding: 28px; }
-  .lp-abertura { padding-top: 36px; }
-}
-</style>
+<script>
+document.documentElement.classList.add('js');
+try{var f=localStorage.getItem('pitstop-fonte');if(f)document.documentElement.style.fontSize=f;}catch(e){}
+</script>
+<link rel="preload" href="/fonts/archivo-latin-standard-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style.css?v=11">
+<link rel="stylesheet" href="/landing.css?v=5">
 </head>
 <body class="lp">
-<a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+<a class="skip-link" href="#recursos">Pular para os recursos</a>
 
-<header class="lp-topo">
-  <div class="lp-wrap">
-    <a href="/" class="lp-marca">PIT STOP</a>
-    <div class="lp-topo-acoes">
-      <div class="fonte-ctrl" role="group" aria-label="Tamanho do texto">
-        <button type="button" data-fonte="menor" aria-label="Diminuir texto">A−</button>
-        <button type="button" data-fonte="normal" aria-label="Texto no tamanho padrão">A</button>
-        <button type="button" data-fonte="maior" aria-label="Aumentar texto">A+</button>
-      </div>
-      <button class="lp-entrar" onclick="abrirLogin()">Entrar</button>
+<header class="nav" id="nav" data-tema="escuro">
+  <button class="nav__menu" id="btnMenu" type="button" aria-expanded="false" aria-label="Abrir o menu" aria-controls="menu"><span class="barras" aria-hidden="true"><i></i><i></i></span><span>Menu</span></button>
+  <a class="nav__logo larga" href="#inicio" aria-label="Pit Stop, voltar ao início">Pit Stop</a>
+  <div class="nav__dir">
+    <div class="fonte-ctrl" role="group" aria-label="Tamanho do texto">
+      <button type="button" data-fonte="menor" aria-label="Diminuir texto">A−</button>
+      <button type="button" data-fonte="normal" aria-label="Texto no tamanho padrão">A</button>
+      <button type="button" data-fonte="maior" aria-label="Aumentar texto">A+</button>
     </div>
+    <button class="nav__cta" type="button" onclick="abrirLogin()">Entrar</button>
   </div>
 </header>
 
+<nav class="menu" id="menu" aria-label="Menu">
+  <ul class="menu__lista larga">
+    <li><a href="#recursos">Recursos</a></li>
+    <li><a href="#exemplo">Exemplo</a></li>
+    <li><a href="#leitura">Fácil de ler</a></li>
+    <li><a href="#duvidas">Dúvidas</a></li>
+    <li><a href="#" onclick="fecharMenu();abrirLogin();return false;">Entrar</a></li>
+  </ul>
+  <p class="menu__pe">Projeto Integrador 2 · CEUB · 2026</p>
+</nav>
+
 <main id="conteudo">
-  <section class="lp-abertura" aria-labelledby="titulo">
-    <div class="lp-wrap">
-      <div>
-        <h1 id="titulo">O caderno de manutenção do seu carro, sem nota fiscal perdida.</h1>
-        <p>Anote cada troca de óleo, revisão e conserto. O Pit Stop guarda o histórico, soma quanto você já gastou e avisa quando a próxima revisão está chegando.</p>
-        <div class="lp-acoes">
-          <button class="btn btn-primary" onclick="abrirLogin('cadastro')">Criar conta grátis</button>
-          <button class="btn btn-ghost" onclick="abrirLogin()">Já tenho conta</button>
+  <!-- Cena presa: hero → passagem → mapa de recursos. O carro 3D é o mesmo do começo ao fim (canvas .palco). -->
+  <section class="cena" id="inicio" aria-label="Início">
+    <div class="cena__fixa">
+      <div class="abertura" aria-hidden="true"><div class="abertura__faixa"></div></div>
+
+      <div class="hero">
+        <p class="hero__marca larga" aria-hidden="true"><span>P</span><span>I</span><span>T</span><span class="esp"></span><span>S</span><span>T</span><span>O</span><span>P</span></p>
+        <div class="hero__vaga" aria-hidden="true"></div>
+        <div class="hero__cupula" aria-hidden="true"></div>
+        <div class="hero__texto">
+          <h1 class="hero__titulo larga">O caderno de manutenção do seu carro, sem nota fiscal perdida.</h1>
+          <div class="hero__acoes">
+            <button type="button" class="botao botao--claro" onclick="abrirLogin('cadastro')"><span>Criar conta grátis</span><i class="botao__seta" aria-hidden="true"></i></button>
+            <button type="button" class="botao botao--contorno" onclick="abrirLogin()"><span>Já tenho conta</span></button>
+          </div>
         </div>
       </div>
 
+      <div class="mapa" id="recursos">
+        <div class="mapa__papel" aria-hidden="true"></div>
+        <div class="mapa__vaga" aria-hidden="true"></div>
+        <h2 class="mapa__titulo larga">Da garagem<br>ao laudo.</h2>
+        <ol class="mapa__lista" aria-label="Recursos">
+          <li class="servico" data-zona="lavagem" data-ancora="0.30,0.42" data-lado="d">
+            <h3 class="servico__nome larga">Garagem</h3>
+            <p>Seus carros com placa, ano, quilometragem e foto. Escolha o modelo no catálogo e a ficha técnica vem preenchida.</p>
+            <span class="servico__tag">Vários carros</span>
+          </li>
+          <li class="servico" data-zona="vitrificacao" data-ancora="-0.30,-0.10" data-lado="e">
+            <h3 class="servico__nome larga">Catálogo</h3>
+            <p>27 modelos populares no Brasil, com motor, consumo e porta-malas.</p>
+            <span class="servico__tag">27 modelos</span>
+          </li>
+          <li class="servico" data-zona="ppf" data-ancora="-0.44,0.22" data-lado="e">
+            <h3 class="servico__nome larga">Manutenções</h3>
+            <p>Cada serviço com data, oficina, quilometragem e valor, do mais recente para o mais antigo.</p>
+            <span class="servico__tag">Data, oficina, km e valor</span>
+          </li>
+          <li class="servico" data-zona="interior" data-ancora="-0.02,0.20" data-lado="d">
+            <h3 class="servico__nome larga">Revisões com laudo</h3>
+            <p>Checklist de 20 itens e um laudo numerado para imprimir e mostrar na hora de vender o carro.</p>
+            <span class="servico__tag">20 itens</span>
+          </li>
+          <li class="servico" data-zona="farois" data-ancora="-0.44,-0.33" data-lado="e">
+            <h3 class="servico__nome larga">Avisos de revisão</h3>
+            <p>O carro aparece como em dia, revisão próxima (30 dias) ou atrasada, sempre escrito, não só pela cor.</p>
+            <span class="servico__tag">30 dias de antecedência</span>
+          </li>
+          <li class="servico" data-zona="polimento" data-ancora="0.08,-0.40" data-lado="d">
+            <h3 class="servico__nome larga">Gastos</h3>
+            <p>Quanto cada carro custou por mês e no total, somado a partir do que você registrou.</p>
+            <span class="servico__tag">Por mês e no total</span>
+          </li>
+        </ol>
+        <svg class="mapa__fio" aria-hidden="true"><path pathLength="1000"/><circle r="5"/></svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="secao exemplo" id="exemplo" aria-labelledby="t-exemplo">
+    <p class="exemplo__palavra larga" aria-hidden="true">Histórico Histórico</p>
+    <div class="lp-wrap">
+      <h2 class="exemplo__titulo larga" id="t-exemplo">Assim fica o histórico<br>de um carro.</h2>
       <figure>
         <div class="ficha" role="group" aria-label="Exemplo de ficha de manutenção">
           <div class="ficha-cab"><strong>Toyota Corolla 2022</strong><span>Placa TCU1A23</span></div>
@@ -124,50 +118,72 @@
           </table>
           <div class="ficha-rodape">✓ Em dia — próxima revisão em 12/02/2027</div>
         </div>
-        <figcaption class="ficha-legenda">Exemplo de como fica o histórico de um carro no Pit Stop.</figcaption>
+        <figcaption class="ficha-legenda">Exemplo de como fica o histórico de um carro no Pit Stop. Os dados desta ficha são fictícios.</figcaption>
       </figure>
     </div>
   </section>
 
-  <section class="lp-secao" aria-labelledby="t-recursos">
+  <section class="secao leitura" id="leitura" aria-labelledby="t-leitura">
     <div class="lp-wrap">
-      <h2 id="t-recursos">O que o Pit Stop guarda para você</h2>
-      <p>Tudo fica organizado por carro. Quem tem mais de um veículo vê cada um com o seu calendário.</p>
-      <dl class="lista-recursos">
-        <div><dt>Garagem</dt><dd>Seus carros com placa, ano, quilometragem e foto. Escolha o modelo no catálogo e a ficha técnica vem preenchida.</dd></div>
-        <div><dt>Manutenções</dt><dd>Cada serviço com data, oficina, quilometragem e valor, do mais recente para o mais antigo.</dd></div>
-        <div><dt>Revisões com laudo</dt><dd>Checklist de 20 itens e um laudo numerado para imprimir e mostrar na hora de vender o carro.</dd></div>
-        <div><dt>Avisos de revisão</dt><dd>O carro aparece como em dia, revisão próxima (30 dias) ou atrasada, sempre escrito, não só pela cor.</dd></div>
-        <div><dt>Gastos</dt><dd>Quanto cada carro custou por mês e no total, somado a partir do que você registrou.</dd></div>
-        <div><dt>Catálogo</dt><dd>27 modelos populares no Brasil, com motor, consumo e porta-malas.</dd></div>
-      </dl>
+      <h2 class="leitura__titulo larga" id="t-leitura">Fácil de ler,<br>para todo mundo.</h2>
+      <div class="leitura-cols">
+        <ul class="pontos">
+          <li>Texto grande e fonte Atkinson Hyperlegible, criada para pessoas com baixa visão.</li>
+          <li>Botões A−, A e A+ no topo para ajustar o tamanho do texto; a escolha fica guardada.</li>
+          <li>Contraste alto e foco do teclado sempre visível.</li>
+          <li>Funciona no celular e no computador, e com leitor de tela.</li>
+        </ul>
+        <ul class="estados" aria-label="Como o estado do carro aparece">
+          <li class="ok"><span class="simb" aria-hidden="true">✓</span>Em dia<span class="txt">nada a fazer agora</span></li>
+          <li class="aviso"><span class="simb" aria-hidden="true">!</span>Revisão próxima<span class="txt">nos próximos 30 dias</span></li>
+          <li class="atraso"><span class="simb" aria-hidden="true">✕</span>Revisão atrasada<span class="txt">a data já passou</span></li>
+        </ul>
+      </div>
     </div>
   </section>
 
-  <section class="lp-secao" aria-labelledby="t-leitura">
+  <section class="secao duvidas" id="duvidas" aria-labelledby="t-duvidas">
     <div class="lp-wrap">
-      <div class="lp-leitura">
-        <div class="aa" aria-hidden="true">A+</div>
-        <div>
-          <h2 id="t-leitura">Fácil de ler, para todo mundo</h2>
-          <ul>
-            <li>Texto grande e fonte Atkinson Hyperlegible, criada para pessoas com baixa visão.</li>
-            <li>Botões A−, A e A+ no topo para ajustar o tamanho do texto; a escolha fica guardada.</li>
-            <li>Contraste alto e foco do teclado sempre visível.</li>
-            <li>Funciona no celular e no computador, e com leitor de tela.</li>
-          </ul>
+      <h2 class="duvidas__titulo larga" id="t-duvidas">Dúvidas</h2>
+      <div class="caixas">
+        <details><summary>O Pit Stop é gratuito?</summary><p>Sim. Criar a conta não custa nada.</p></details>
+        <details><summary>Como o Pit Stop sabe que a revisão está chegando?</summary><p>Você registra a data da próxima revisão em cada manutenção. Quando faltam 30 dias ou menos, o carro aparece como “Revisão próxima”; passada a data, como “Revisão atrasada”.</p></details>
+        <details><summary>Posso imprimir o laudo de uma revisão?</summary><p>Sim. A revisão tem um checklist de 20 itens e gera um laudo numerado, pronto para imprimir.</p></details>
+        <details><summary>Preciso distinguir cores para entender o estado do carro?</summary><p>Não. O estado sempre aparece escrito, com um símbolo, além da cor.</p></details>
+        <details><summary>Como aumento o tamanho do texto?</summary><p>Use os botões A−, A e A+ no topo de qualquer tela. A escolha fica guardada no seu navegador.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="fecho" id="agendar" aria-labelledby="t-fecho">
+    <div class="fecho__card">
+      <h2 class="fecho__titulo larga" id="t-fecho"><span>Seu carro</span> <span>com a ficha</span> <span>em dia.</span></h2>
+      <div class="fecho__vaga" aria-hidden="true"></div>
+      <div class="fecho__acoes">
+        <div class="fecho__botoes">
+          <button type="button" class="botao botao--claro" onclick="abrirLogin('cadastro')"><span>Criar conta grátis</span><i class="botao__seta" aria-hidden="true"></i></button>
+          <button type="button" class="botao botao--contorno" onclick="abrirLogin()"><span>Já tenho conta</span></button>
         </div>
       </div>
     </div>
   </section>
 </main>
 
-<footer class="lp-rodape">
-  <div class="lp-wrap">
-    <span>Pit Stop · Projeto Integrador 2 · CEUB · 2026</span>
-    <span>Nathan Gerken, Gustavo Pereira de Sousa e Bernardo Gontijo</span>
+<footer class="secao rodape">
+  <div class="rodape__grade">
+    <div><p class="larga" style="color:#fff;font-size:1.3rem">Pit Stop</p><p>Gestão automotiva. O histórico de manutenção dos seus carros em um só lugar.</p></div>
+    <div><h3>Páginas</h3><ul><li><a href="#recursos">Recursos</a></li><li><a href="#exemplo">Exemplo</a></li><li><a href="#leitura">Fácil de ler</a></li><li><a href="#duvidas">Dúvidas</a></li></ul></div>
+    <div><h3>Projeto</h3><p>Projeto Integrador 2<br>CEUB · 2026</p></div>
+    <div><h3>Equipe</h3><p>Nathan Gerken<br>Gustavo Pereira de Sousa<br>Bernardo Gontijo</p></div>
   </div>
+  <div class="rodape__fim">
+    <p>© 2026 Pit Stop</p>
+    <p>Modelo 3D: <a href="https://sketchfab.com/3d-models/aston-martin-db11-0ce56f01b1ff40b3a4e36bc56873dbc7" target="_blank" rel="noopener">“Aston Martin db11”</a>, de <a href="https://sketchfab.com/BlackSnow02" target="_blank" rel="noopener">Black Snow</a>, licença <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY 4.0</a></p>
+  </div>
+  <p class="rodape__nome larga" aria-hidden="true">Pit Stop</p>
 </footer>
+
+<canvas class="palco" aria-hidden="true"></canvas>
 
 <div class="lp-modal-overlay" id="loginModal" onclick="fecharLogin(event)">
   <div class="lp-modal" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="lp-modal-title">
@@ -225,6 +241,8 @@
 
 <div id="toasts"></div>
 <script src="/main.js?v=7"></script>
+<script src="/landing.js?v=3"></script>
+<script type="module" src="/landing3d/landing3d.js?v=1"></script>
 <script>
 function abrirLogin(aba){
   var m=document.getElementById('loginModal');
